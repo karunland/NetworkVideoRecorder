@@ -60,14 +60,18 @@
       </div>
       <div class="col-md-6">
         <div class="row mb-3">
-          <div class="mb-2">RTSP Stream Status: <span id="cameraStatus" class="badge bg-{{ 'success' if status else 'danger' }}">{{ 'Online' if
-            status else 'Offline'}}</span></div>
+          <div class="mb-2">RTSP Stream Status: <span id="cameraStatus"
+              class="badge bg-{{ 'success' if status else 'danger' }}">{{ 'Online' if
+              status else 'Offline'}}</span></div>
           <div class="d-flex">
-            <button id="stopCameraButton" class="mx-2 btn btn-danger btn-sm">Stop Camera</button>
-            <button id="startCameraButton" class="mx-2 btn btn-success btn-sm">Start Camera</button>
-            <button id="startCameraButton" class="mx-2 btn btn-success btn-sm">Start Recording</button>
+            <div>
+              <button id="startCameraButton" class="mx-2 btn btn-success btn-sm">Start Camera</button>
+              <button id="stopCameraButton" class="mx-2 btn btn-danger btn-sm">Stop Camera</button>
+            </div>
+            <div style="margin-left: auto !important;">
+              <button id="startCameraButton" class="mx-2 btn btn-success btn-sm">Start Recording</button>
+            </div>
           </div>
-        
         </div>
         <div class="row" id="videoContainer">
           <img id="video_feed" src="" alt="RTSP Yayını">

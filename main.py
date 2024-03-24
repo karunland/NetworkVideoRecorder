@@ -14,7 +14,7 @@ password = "password"
 camera_process = None
 status = False
 
-# RTSP yayınından MJPEG formatında video almak için bir fonksiyon
+
 def gen_frames():
     cap = cv2.VideoCapture(f'rtsp://{username}:{password}@127.0.0.1:8554/stream', cv2.CAP_FFMPEG)
     while True:
@@ -29,7 +29,7 @@ def gen_frames():
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
-# Kamera işlemini başlatmak için bir fonksiyon
+
 def run_camera_command():
     global camera_process, status
     cmd = f"rpicam-vid -n -p 0,0,640,480 --framerate 15 --bitrate 2000000 -t 0 --inline -o - | cvlc -vvv stream:///dev/stdin --sout '#rtp{{sdp=rtsp://:8554/stream}}' :demux=h264 :h264-fps=15 --sout-rtsp-user {username} --sout-rtsp-pwd {password}"
@@ -91,6 +91,7 @@ def start_camera():
 def video_feed():
     gen = gen_frames()
     return Response(gen, mimetype='multipart/x-mixed-replace; boundary=frame')
+
 
 if __name__ == "__main__":
     try:
