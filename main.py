@@ -4,6 +4,7 @@ import subprocess
 import psutil
 import cv2
 import os
+from datetime import datetime
 
 os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;udp"
 
@@ -22,6 +23,11 @@ def gen_frames():
         if not success:
             break
         else:
+            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            frame = cv2.flip(frame, 0)
+
+            cv2.putText(frame, current_time, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            
             ret, buffer = cv2.imencode('.jpg', frame)
             if not ret:
                 break
