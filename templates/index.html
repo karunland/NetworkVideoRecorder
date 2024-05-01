@@ -13,7 +13,7 @@
 </head>
 
 <body>
-  <div class="container mt-1" style="padding: 0 220px;">
+  <div class="container mt-1" style="padding: 0 20px;">
     <div class="row">
       <div class="row mb-2">
         <div class="d-flex justify-content-between">
@@ -65,7 +65,7 @@
         </div>
       </div>
       <div class="col-md-6">
-        <div class="row mb-3">
+        <div class="row mb-3" style="margin-bottom: 400px;">
           <div class="mb-2">RTSP Stream Status: <span id="cameraStatus"
               class="badge bg-{{ 'success' if status else 'danger' }}">{{ 'Online' if status else 'Offline'}}</span>
           </div>
@@ -78,6 +78,9 @@
         </div>
         <div class="row" id="videoContainer">
           <img id="video_feed" src="" alt="RTSP Yayını">
+        </div>
+        <div class="row" id="videoContainer">
+          <img id="video_feed2" src="" alt="RTSP Yayını">
         </div>
         <div>
           <button id="startRecordingButton" class="mx-2 btn btn-success btn-sm">Start Recording</button>
@@ -242,12 +245,34 @@
 
   window.onload = function () {
     startVideoFeed();
+    startVideoFeed2();
   };
 
   function startVideoFeed() {
-    var videoUrl = "http://127.0.0.1:5000/video_feed";
+    var videoUrl = "http://127.0.0.1:5000/video_feed/101";
+    var videoUrl2 = "http://127.0.0.1:5000/video_feed/100";
+    // var videoElement = $("#video_feed");
     var videoElement = document.getElementById("video_feed");
+    var videoElement2 = document.getElementById("video_feed2");
     videoElement.src = videoUrl;
+    videoElement2.src = videoUrl2;
+    // // var ipAddress = $("#ipAddress").val();
+    // var ipAddress = "192.168.100.101"
+    // var username = $("#username").val();
+    // var password = $("#password").val();
+
+    // $.ajax({
+    //     url: videoUrl,
+    //     type: "POST",
+    //     data: JSON.stringify({ ipAddress: ipAddress, username: username, password: password, url: '/stream', port : ''}),
+    //     contentType: "application/json",
+    //     success: function (data) {
+    //       videoElement.attr("src", videoUrl);
+    //     },
+    //     error: function (xhr, status, error) {
+    //       console.error("Error:", error);
+    //     }
+    // });
   }
 
   function updateCamera() {

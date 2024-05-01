@@ -20,42 +20,44 @@ status = False
 
 continuous_record = False
 
-def record_stream():
+def record_stream(user: str = None, passw: str = None, ip: str = None, port: str = None, url: str = None):
     global continuous_record
-    print("Recording started...")
-    record_duration = 15
-    start_time = datetime.now()
-    
-    filename = f"{RECORDINGS_FOLDER}/record_{datetime.now().strftime('%H:%M:%S')}.avi"
-    fourcc = cv2.VideoWriter_fourcc(*'XVID')
-    out = cv2.VideoWriter(filename, fourcc, 20.0, (640, 480))
 
-    cap = cv2.VideoCapture(f'rtsp://{username}:{password}@127.0.0.1:8554/stream', cv2.CAP_FFMPEG)
-    
     while continuous_record:
-        ret, frame = cap.read()
-        if not ret:
-            break
-
-        out.write(frame)
+        print("Recording started...")
+        record_duration = 15
         
-        if datetime.now() - start_time >= timedelta(seconds=record_duration):
-            print("Recording stopped...")
-            # continuous_record = False
-            break
-    
-    cap.release()
-    out.release()
+        filename = f"{RECORDINGS_FOLDER}/record_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S-%f')[:-3]}.avi"
+        
+        # Construct the ffmpeg command
+        command = ['ffmpeg', '-i', f'rtsp://{ user + ":" + passw + "@" if user and passw else ""}{ip}{":"+ port if port else ""}{url if url else ""}',
+                   '-t', str(record_duration), '-c:v', 'copy', filename]
+        
+        # Start the recording process
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        
+        # Wait for the recording to finish
+        stdout, stderr = process.communicate()
+        
+        if process.returncode != 0:
+            print(f"Error occurred during recording: {stderr.decode('utf-8')}")
+        else:
+            print("Recording finished.")
 
-    if continuous_record:
-        print("Recording duration exceeded. Restarting recording...")
-        record_stream()
+        
+        if continuous_record:
+            print("Recording duration exceeded. Restarting recording...")
+            record_stream(user, passw, ip, port, url)
+        else:
+            print("Recording stopped.")
+            break
+
 
 def start_continuous_record():
     global continuous_record
     if not continuous_record:
         continuous_record = True
-        Thread(target=record_stream).start()
+        Thread(target=record_stream(**{'ip': '192.168.100.101'})).start()
         return {"message": "Continuous recording started successfully"}
     else:
         return {"message": "Continuous recording is already running"}
@@ -79,15 +81,15 @@ def start_continuous_record_route():
 def stop_continuous_record_route():
     return jsonify(stop_continuous_record())
 
-def gen_frames():
-    cap = cv2.VideoCapture(f'rtsp://{username}:{password}@127.0.0.1:8554/stream', cv2.CAP_FFMPEG)
+def gen_frames(user: str = None, passw: str = None, ip: str = None, port: str = None, url: str = None):
+    app = f'rtsp://{ user + "@" + passw if user and passw is not None else ""}{ip}{":"+ port if port else ""}{port if port else ""}{url if url else ""}'
+    cap = cv2.VideoCapture(app, cv2.CAP_FFMPEG)
     while True:
         success, frame = cap.read()
         if not success:
             break
         else:
-            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
+            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S:%f")
             cv2.putText(frame, current_time, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
             
             ret, buffer = cv2.imencode('.jpg', frame)
@@ -97,9 +99,15 @@ def gen_frames():
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
-@app.route('/video_feed', methods=['GET'])
-def video_feed():
-    gen = gen_frames()
+@app.route('/video_feed/<int:ip>', methods=['GET'])
+def video_feed(ip: int):
+    # ip_address = request.json.get('ipAddress')
+    # port = request.json.get('port')
+    # username = request.json.get('username')
+    # password = request.json.get('password')
+    # url = request.json.get('url')
+
+    gen = gen_frames(ip=f'192.168.100.{ip}')
     return Response(gen, mimetype='multipart/x-mixed-replace; boundary=frame')
 
 def run_camera_command():
@@ -176,7 +184,7 @@ def recording_list():
         file_info = {
             'name': filename,
             'size': f"{file_stat.st_size / (1024 * 1024):.2f} MB",
-            'created_at': datetime.fromtimestamp(file_stat.st_ctime).strftime("%Y-%m-%d %H:%M:%S") # type: ignore
+            'created_at': datetime.fromtimestamp(file_stat.st_ctime).strftime("%Y-%m-%d %H:%M:%S.%f")[:-2] # type: ignore
         }
         recordings.append(file_info)
 
@@ -212,7 +220,7 @@ def download_file(filename):
 
 if __name__ == "__main__":
     try:
-        Thread(target=run_camera_command).start()
+        # Thread(target=run_camera_command).start()
         app.run("0.0.0.0", "5000", True)
     except KeyboardInterrupt:
         stop_camera_command()
