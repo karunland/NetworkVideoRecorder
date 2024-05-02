@@ -1,4 +1,4 @@
-from flask import Flask, Response, render_template, request, jsonify, send_from_directory
+from flask import Flask, Response, redirect, render_template, request, jsonify, send_from_directory, url_for
 from threading import Thread
 import subprocess
 import psutil
@@ -6,6 +6,7 @@ import cv2
 import os
 from datetime import datetime, timedelta
 from flask_cors import CORS
+from cam import Camera
 
 os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;udp"
 RECORDINGS_FOLDER = 'recordings'
@@ -81,8 +82,10 @@ def start_continuous_record_route():
 def stop_continuous_record_route():
     return jsonify(stop_continuous_record())
 
-def gen_frames(user: str = None, passw: str = None, ip: str = None, port: str = None, url: str = None):
-    app = f'rtsp://{ user + "@" + passw if user and passw is not None else ""}{ip}{":"+ port if port else ""}{port if port else ""}{url if url else ""}'
+def gen_frames(camera: Camera):
+    # app = f'rtsp://{ user + "@" + passw if user and passw is not None else ""}{ip}{":"+ port if port else ""}{port if port else ""}{url if url else ""}'
+    app = camera.__str__()
+
     cap = cv2.VideoCapture(app, cv2.CAP_FFMPEG)
     while True:
         success, frame = cap.read()
@@ -99,15 +102,20 @@ def gen_frames(user: str = None, passw: str = None, ip: str = None, port: str = 
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
-@app.route('/video_feed/<int:ip>', methods=['GET'])
-def video_feed(ip: int):
-    # ip_address = request.json.get('ipAddress')
-    # port = request.json.get('port')
-    # username = request.json.get('username')
-    # password = request.json.get('password')
-    # url = request.json.get('url')
+@app.route('/video_feed', methods=['GET'])
+def video_feed():
+    ip_address = request.args.get('ip')
+    port = request.args.get('port')
+    username = request.args.get('username')
+    password = request.args.get('password')
+    url = request.args.get('url')
 
-    gen = gen_frames(ip=f'192.168.100.{ip}')
+    camera = Camera(ip=ip_address, port=port, username=username, password=password, url=url)
+
+    # camera.start_live_feed()
+
+    gen = gen_frames(camera)
+
     return Response(gen, mimetype='multipart/x-mixed-replace; boundary=frame')
 
 def run_camera_command():
@@ -144,8 +152,9 @@ def start_camera_command():
         return jsonify({"message": "Camera started successfully"})
     return jsonify({"message": "Camera already running"})
 
-
 @app.route('/', methods=['GET', 'POST', 'PUT'])
+@app.route('/index', methods=['GET', 'POST', 'PUT'])
+@app.route('/home', methods=['GET', 'POST', 'PUT'])
 def index():
     global username, password, status
     if request.method == 'POST' or request.method == 'PUT':
@@ -168,7 +177,7 @@ def index():
         recordings.append(file_info)
 
     recordings = sorted(recordings, key=lambda x: x['created_at'], reverse=True)
-    return render_template('index.html', status=status, username=username, password=password, recordings=recordings)
+    return render_template('index.html', status=status, username=username, password=password, recordings=recordings, cameras=cameras)
 
 @app.route('/recordingList', methods=['GET', 'POST'])
 def recording_list():
@@ -218,9 +227,33 @@ def start_camera():
 def download_file(filename):
     return send_from_directory(RECORDINGS_FOLDER, filename, as_attachment=True)
 
+cameras = []
+
+@app.route('/add_camera', methods=['POST'])
+def add_camera():
+    global cameras
+    data = request.json
+    ip = data.get('ip')
+    port = data.get('port')
+    username = data.get('username')
+    password = data.get('password')
+
+    camera_id = len(cameras) + 1
+    cameras[camera_id] = Camera(ip, port, username, password)
+    # return jsonify({"message": "Camera added successfully", "camera_id": camera_id})
+    return redirect(url_for('/'))
+
+# # Program yeniden başladığında kameraları sil
+# @app._got_first_request
+# def clear_cameras():
+#     global cameras
+#     cameras = {}
+
 if __name__ == "__main__":
     try:
         # Thread(target=run_camera_command).start()
+        # add default camera to list
+        cameras.append(Camera(ip='localhost', port='8554', username='admin', password='admin', url='/stream'))
         app.run("0.0.0.0", "5000", True)
     except KeyboardInterrupt:
         stop_camera_command()

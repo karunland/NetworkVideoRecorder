@@ -8,7 +8,7 @@
   <link href='https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css' rel='stylesheet'
     integrity='sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH' crossorigin='anonymous'>
   <link href='https://cdn.datatables.net/2.0.5/css/dataTables.semanticui.min.css' rel='stylesheet' type='text/css'>
-    
+
   <link href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-dark@4/dark.css" rel="stylesheet">
 </head>
 
@@ -23,17 +23,32 @@
           </div>
           <div style="display: flex; align-items: center;">
             <ul style="display: flex; margin: 0; list-style: none;">
-              <a type="button" class="" style="background: #80000040;padding: 10px;border-radius: 25px;text-decoration: none;"
-                 data-toggle="modal" data-target="#exampleModal">
-                Update Credentials
-              </a>
-              <!-- <li><a data-toggle="modal" data-target="#exampleModal" href="#">link</a></li> -->
+              <li>
+                <a type="button" class=""
+                  style="background: #80000040;padding: 10px;border-radius: 25px;text-decoration: none;"
+                  data-toggle="modal" data-target="#exampleModal">
+                  Update Credentials
+                </a>
+              </li>
+              <li>
+                <a type="button" class=""
+                  style="background: #80000040;padding: 10px;border-radius: 25px;text-decoration: none;"
+                  data-toggle="modal" data-target="#addCameraModal">
+                  <i class="bi bi-plus"></i> Add Camera
+                </a>
+              </li>
+              <li>
+                <a type="button" class=""
+                  style="background: #80000040;padding: 10px;border-radius: 25px;text-decoration: none;"
+                  data-toggle="modal" data-target="#listCameras">
+                  <i class="bi bi-bar-chart-steps"></i> List Cameras
+                </a>
+              </li>
             </ul>
           </div>
         </div>
       </div>
       <div class="col-md-6">
-
         <div class="empTable row mt-3"
           style="font-size: smaller; overflow-y: scroll; height: 500px; border: 1px solid #dedede;">
           <div class="container">
@@ -76,18 +91,35 @@
             </div>
           </div>
         </div>
-        <div class="row" id="videoContainer">
+        <!-- <div class="row" id="videoContainer">
           <img id="video_feed" src="" alt="RTSP Yayını">
-        </div>
-        <div class="row" id="videoContainer">
-          <img id="video_feed2" src="" alt="RTSP Yayını">
-        </div>
+        </div> -->
         <div>
           <button id="startRecordingButton" class="mx-2 btn btn-success btn-sm">Start Recording</button>
           <button id="stopRecordingButton" class="mx-2 btn btn-danger btn-sm">Stop Recording</button>
         </div>
       </div>
     </div>
+    <div class="row" style="display: flex;">
+      {% for camera_id, camera_info in cameras.items() %}
+      <div class="col-md-6" style="padding: 0 10px;">
+        <div class="row" id="videoContainer" style="position: relative;">
+          <img id="video_feed_{{ camera_id }}"
+            src="{{ url_for('video_feed', ip=camera_info.ip, port=camera_info.port, username=camera_info.username, password=camera_info.password, url=camera_info.url) }}"
+            alt="RTSP Yayını" style="max-width: 100%; max-height: 100%;">
+          <div class="overlay"
+            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center;">
+            <p style="color: white;">Yayın mevcut değil</p>
+          </div>
+        </div>
+        <p>Camera IP: {{ camera_info.ip }}</p>
+        <p>Camera Port: {{ camera_info.port }}</p>
+        <p>Username: {{ camera_info.username }}</p>
+        <p>Password: {{ camera_info.password }}</p>
+      </div>
+      {% endfor %}
+    </div>
+
     <div class="footer navbar-fixed-bottom col-12" style="position: fixed;bottom: 0;background: #dedede5b;left: 0;">
       <div class="row">
         <hr>
@@ -133,6 +165,51 @@
     </div>
     <!-- modal end -->
 
+
+    <!-- camera add modal -->
+    <!-- Modal for adding a camera -->
+    <div class="modal fade" id="addCameraModal" tabindex="-1" role="dialog" aria-labelledby="addCameraModalLabel"
+      aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="addCameraModalLabel">Add Camera</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <form id="addCameraForm">
+            <div class="modal-body">
+              <div class="mb-3">
+                <label for="cameraIp" class="form-label">Camera IP Address</label>
+                <input type="text" class="form-control" id="cameraIp" name="cameraIp" placeholder="Enter IP Address">
+              </div>
+              <div class="mb-3">
+                <label for="cameraPort" class="form-label">Camera Port</label>
+                <input type="text" class="form-control" id="cameraPort" name="cameraPort" placeholder="Enter Port">
+              </div>
+              <div class="mb-3">
+                <label for="cameraUsername" class="form-label">Username</label>
+                <input type="text" class="form-control" id="cameraUsername" name="cameraUsername"
+                  placeholder="Enter Username">
+              </div>
+              <div class="mb-3">
+                <label for="cameraPassword" class="form-label">Password</label>
+                <input type="password" class="form-control" id="cameraPassword" name="cameraPassword"
+                  placeholder="Enter Password">
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+              <button type="submit" class="btn btn-primary">Add Camera</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- camera add modal end -->
+
 </body>
 
 </html>
@@ -148,12 +225,6 @@
 <script src="sweetalert2/dist/sweetalert2.min.js"></script>
 
 <script src="../static/pagination.js"></script>
-<!-- <script src="../static/pagination.min.js"></script> -->
-<!-- <script src="https://pagination.js.org/dist/2.6.0/pagination.js"></script>
-<script src="https://pagination.js.org/dist/2.6.0/pagination.min.js"></script>
-<script src='https://cdn.datatables.net/2.0.5/js/dataTables.semanticui.min.js'></script>
-<script src='https://cdn.datatables.net/2.0.5/js/dataTables.min.js'></script> -->
-
 
 <script>
   $(document).ready(function () {
@@ -245,34 +316,13 @@
 
   window.onload = function () {
     startVideoFeed();
-    startVideoFeed2();
+    // startVideoFeed2();
   };
 
   function startVideoFeed() {
     var videoUrl = "http://127.0.0.1:5000/video_feed/101";
-    var videoUrl2 = "http://127.0.0.1:5000/video_feed/100";
-    // var videoElement = $("#video_feed");
     var videoElement = document.getElementById("video_feed");
-    var videoElement2 = document.getElementById("video_feed2");
     videoElement.src = videoUrl;
-    videoElement2.src = videoUrl2;
-    // // var ipAddress = $("#ipAddress").val();
-    // var ipAddress = "192.168.100.101"
-    // var username = $("#username").val();
-    // var password = $("#password").val();
-
-    // $.ajax({
-    //     url: videoUrl,
-    //     type: "POST",
-    //     data: JSON.stringify({ ipAddress: ipAddress, username: username, password: password, url: '/stream', port : ''}),
-    //     contentType: "application/json",
-    //     success: function (data) {
-    //       videoElement.attr("src", videoUrl);
-    //     },
-    //     error: function (xhr, status, error) {
-    //       console.error("Error:", error);
-    //     }
-    // });
   }
 
   function updateCamera() {
