@@ -1,6 +1,6 @@
 
 class Camera:
-    def __init__(self, ip: str, port: str, username: str, password: str, url: str, multiCastUrl:str, id:int = 0):
+    def __init__(self, ip: str = "", port: str = "", username: str = "", password: str = "", url: str = "", multiCastUrl:str = "", id:int = 0):
         self.id = id
         self.ip = ip
         self.port = port
@@ -8,6 +8,7 @@ class Camera:
         self.password = password
         self.url = url
         self.multiCastUrl = multiCastUrl
+        self.recordConstant = False
 
     def __str__(self):
         return f"rtsp://{self.username + ':' + self.password + '@' if self.username and self.password else ''}{self.ip}{':' + self.port if self.port else ''}{self.url if self.url else ''}"

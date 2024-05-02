@@ -13,12 +13,12 @@
 </head>
 
 <body>
-  <div class="container mt-1" style="padding: 0 20px;">
+  <div class="container mt-1">
     <div class="row">
       <div class="row mb-2">
         <div class="d-flex justify-content-between">
           <div>
-            <h1 class="" style="font-size: 24px;">Network Video Recorder <img style="max-width: 60px;"
+            <h1 class="" style="font-size: 18px;">Network Video Recorder {{ cameraCount }}<img style="max-width: 40px;"
                 src="https://cdn.worldvectorlogo.com/logos/raspberry-pi.svg" alt="rpi"></h1>
           </div>
           <div style="display: flex; align-items: center;">
@@ -26,33 +26,18 @@
               <li>
                 <a type="button" class=""
                   style="background: #80000040;padding: 10px;border-radius: 25px;text-decoration: none;"
-                  data-toggle="modal" data-target="#exampleModal">
-                  Update Credentials
-                </a>
-              </li>
-              <li>
-                <a type="button" class=""
-                  style="background: #80000040;padding: 10px;border-radius: 25px;text-decoration: none;"
                   data-toggle="modal" data-target="#addCameraModal">
                   <i class="bi bi-plus"></i> Add Camera
-                </a>
-              </li>
-              <li>
-                <a type="button" class=""
-                  style="background: #80000040;padding: 10px;border-radius: 25px;text-decoration: none;"
-                  data-toggle="modal" data-target="#listCameras">
-                  <i class="bi bi-bar-chart-steps"></i> List Cameras
                 </a>
               </li>
             </ul>
           </div>
         </div>
       </div>
-      <div class="col-md-6">
-        <div class="empTable row mt-3"
-          style="font-size: smaller; overflow-y: scroll; height: 500px; border: 1px solid #dedede;">
+      <div class="col-md-8">
+        <div class="empTable row mt-3" style="font-size: smaller; overflow-y: scroll; height: 360px;">
           <div class="container">
-            <h1>Recordings</h1>
+            <h4>Recordings</h4>
             <table class="table">
               <thead>
                 <tr>
@@ -79,95 +64,63 @@
           </div>
         </div>
       </div>
-      <div class="col-md-6">
+      <!-- <div class="col-md-6">
         <div class="row mb-3" style="margin-bottom: 400px;">
           <div class="mb-2">RTSP Stream Status: <span id="cameraStatus"
               class="badge bg-{{ 'success' if status else 'danger' }}">{{ 'Online' if status else 'Offline'}}</span>
           </div>
           <div class="d-flex">
-            <div>
-              <button id="startCameraButton" class="mx-2 btn btn-success btn-sm">Start Camera</button>
-              <button id="stopCameraButton" class="mx-2 btn btn-danger btn-sm">Stop Camera</button>
-            </div>
+            <button id="startCameraButton" class="mx-2 btn btn-success btn-sm">Start Camera</button>
+            <button id="stopCameraButton" class="mx-2 btn btn-danger btn-sm">Stop Camera</button>
           </div>
         </div>
-        <!-- <div class="row" id="videoContainer">
-          <img id="video_feed" src="" alt="RTSP Yayını">
-        </div> -->
-        <div>
-          <button id="startRecordingButton" class="mx-2 btn btn-success btn-sm">Start Recording</button>
-          <button id="stopRecordingButton" class="mx-2 btn btn-danger btn-sm">Stop Recording</button>
-        </div>
-      </div>
+      </div> -->
+
     </div>
     <div class="row" style="display: flex;">
-      {% for camera_id, camera_info in cameras.items() %}
-      <div class="col-md-6" style="padding: 0 10px;">
-        <div class="row" id="videoContainer" style="position: relative;">
-          <img id="video_feed_{{ camera_id }}"
+      {% for camera_info in cameras %}
+      <div class="col-md-4" style="padding: 0 10px;">
+        <div class="row" id="videoContainer" style="position: relative; min-height: 440px;">
+          <img id="video_feed_{{ loop.index }}"
             src="{{ url_for('video_feed', ip=camera_info.ip, port=camera_info.port, username=camera_info.username, password=camera_info.password, url=camera_info.url) }}"
-            alt="RTSP Yayını" style="max-width: 100%; max-height: 100%;">
+            alt="RTSP Yayını" style="max-width: 100%; max-height: 100%; z-index:1001;">
           <div class="overlay"
             style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center;">
             <p style="color: white;">Yayın mevcut değil</p>
+          </div>
+          <div class="controls"
+            style="position: absolute; left: 75%; transform: translate(-50%, -50%); z-index: 1002;bottom: 0;">
+            <button id="startRecordingButton" onclick="startRecording({{ camera_info.id }})">Kaydı Başlat</button>
+            <button id="stopRecordingButton" onclick="stopRecording({{ camera_info.id }})">Durdur</button>
+          </div>
+          <div class="controls" style="position: absolute; top: 10px; left: 85%; z-index: 1002;">
+            <button style="border-radius: 50%;" id="updateCamera"
+              onclick="showEditModal({{ camera_info.id }})">...</button>
           </div>
         </div>
         <p>Camera IP: {{ camera_info.ip }}</p>
         <p>Camera Port: {{ camera_info.port }}</p>
         <p>Username: {{ camera_info.username }}</p>
         <p>Password: {{ camera_info.password }}</p>
+        <p>url: {{ camera_info.url }}</p>
       </div>
       {% endfor %}
     </div>
+  </div>
 
-    <div class="footer navbar-fixed-bottom col-12" style="position: fixed;bottom: 0;background: #dedede5b;left: 0;">
+    
+
+    
+    <div class="footer col-12" id="myFooter">
       <div class="row">
         <hr>
-        <p style=" text-align: center">Check out Project
+        <p style="text-align: center">Check out Project
           <a href="#">Github repository</a>
         </p>
       </div>
     </div>
 
-    <!-- modal start -->
-    <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
-      aria-hidden="true">
-      <div class="modal-dialog" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="exampleModalLabel">Update Streaming Credentials</h5>
-            <!-- <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-              <span aria-hidden="true">&times;</span>
-            </button> -->
-          </div>
-          <form id="credentialsForm">
-            <div class="modal-body">
-              <div class="row">
-                <div class="mb-3">
-                  <label for="username" class="form-label">Username</label>
-                  <input type="text" class="form-control" id="username" name="username" placeholder="Enter username"
-                    value="{{ username }}">
-                </div>
-                <div class="mb-3">
-                  <label for="password" class="form-label">Password</label>
-                  <input type="text" class="form-control" id="password" name="password" placeholder="Enter password"
-                    value="{{ password }}">
-                </div>
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-dismiss="modal" id="closer">Close</button>
-              <button type="button" class="btn btn-primary" id="updateCredentialsButton">Save changes</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-    <!-- modal end -->
-
-
     <!-- camera add modal -->
-    <!-- Modal for adding a camera -->
     <div class="modal fade" id="addCameraModal" tabindex="-1" role="dialog" aria-labelledby="addCameraModalLabel"
       aria-hidden="true">
       <div class="modal-dialog" role="document">
@@ -180,22 +133,30 @@
           </div>
           <form id="addCameraForm">
             <div class="modal-body">
+              <input id="cameraId" value="" name="cameraId" type="hidden" />
               <div class="mb-3">
                 <label for="cameraIp" class="form-label">Camera IP Address</label>
-                <input type="text" class="form-control" id="cameraIp" name="cameraIp" placeholder="Enter IP Address">
+                <input type="text" class="form-control" id="cameraIp" name="cameraIp" value="192.168.1.195"
+                  placeholder="Enter IP Address">
               </div>
               <div class="mb-3">
                 <label for="cameraPort" class="form-label">Camera Port</label>
-                <input type="text" class="form-control" id="cameraPort" name="cameraPort" placeholder="Enter Port">
+                <input type="text" class="form-control" id="cameraPort" name="cameraPort" value="8554"
+                  placeholder="Enter Port">
+              </div>
+              <div class="mb-3">
+                <label for="cameraUrl" class="form-label">Url</label>
+                <input type="text" class="form-control" id="cameraUrl" name="cameraUrl" value="/stream"
+                  placeholder="Enter Url">
               </div>
               <div class="mb-3">
                 <label for="cameraUsername" class="form-label">Username</label>
-                <input type="text" class="form-control" id="cameraUsername" name="cameraUsername"
+                <input type="text" class="form-control" id="cameraUsername" value="username" name="cameraUsername"
                   placeholder="Enter Username">
               </div>
               <div class="mb-3">
                 <label for="cameraPassword" class="form-label">Password</label>
-                <input type="password" class="form-control" id="cameraPassword" name="cameraPassword"
+                <input type="password" class="form-control" id="cameraPassword" value="password" name="cameraPassword"
                   placeholder="Enter Password">
               </div>
             </div>
@@ -207,9 +168,7 @@
         </div>
       </div>
     </div>
-
     <!-- camera add modal end -->
-
 </body>
 
 </html>
@@ -227,143 +186,145 @@
 <script src="../static/pagination.js"></script>
 
 <script>
-  $(document).ready(function () {
+  $(document).ready(function () { });
+  window.onload = function () { };
 
-    toastr.options = {
-      "closeButton": false,
-      "debug": false,
-      "newestOnTop": true,
-      "progressBar": true,
-      "positionClass": "toast-top-right",
-      "preventDuplicates": true,
-      "onclick": null,
-      "showDuration": "300",
-      "hideDuration": "1000",
-      "timeOut": "5000",
-      "extendedTimeOut": "1000",
-      "showEasing": "swing",
-      "hideEasing": "linear",
-      "showMethod": "fadeIn",
-      "hideMethod": "fadeOut"
-    }
+  toastr.options = {
+    "closeButton": false,
+    "debug": false,
+    "newestOnTop": true,
+    "progressBar": true,
+    "positionClass": "toast-top-right",
+    "preventDuplicates": true,
+    "onclick": null,
+    "showDuration": "300",
+    "hideDuration": "1000",
+    "timeOut": "5000",
+    "extendedTimeOut": "1000",
+    "showEasing": "swing",
+    "hideEasing": "linear",
+    "showMethod": "fadeIn",
+    "hideMethod": "fadeOut"
+  }
 
-    $('#updateCredentialsButton').click(function () {
-      var username = $('#username').val();
-      var password = $('#password').val();
-
-      $.ajax({
-        url: '/',
-        type: 'PUT',
-        contentType: 'application/json',
-        data: JSON.stringify({ username: username, password: password }),
-        success: function (data) {
-          toastr.success(data.message);
-          $('#closer').click();
-          Swal.fire({
-            icon: 'success',
-            title: 'Success',
-            text: data.message,
-          });
-        },
-        error: function (xhr, status, error) {
-          toastr.error('Error:', error);
-          Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'An error occurred while updating credentials.',
-          });
-        }
-      });
+  $('#stopCameraButton').click(function () {
+    $.get('/stop', function (data) {
+      toastr.success("data.message");
+    }).fail(function () {
+      toastr.error("Error stopping the camera.");
     });
-
-    $('#stopCameraButton').click(function () {
-      $.get('/stop', function (data) {
-        toastr.success(data.message);
-      }).fail(function () {
-        toastr.error("Error stopping the camera.");
-      });
-    });
-
-    function updateCameraStatus(data) {
-      var statusElement = $('#cameraStatus');
-      if (data.status) {
-        statusElement.removeClass('bg-danger').addClass('bg-success');
-        statusElement.text('Online');
-      } else {
-        statusElement.removeClass('bg-success').addClass('bg-danger');
-        statusElement.text('Offline');
-      }
-    }
-
-    $("#startCameraButton").click(function () {
-      $.get('/start', function (data) {
-        toastr.success(data.message);
-        updateCamera();
-      }).fail(function () {
-        toastr.error("Error starting the camera.");
-      });
-    });
-
-    setInterval(function () {
-      $.getJSON('/status', function (data) {
-        updateCameraStatus(data);
-      }).fail(function () {
-        toastr.error("Error getting camera status.");
-      })
-    }, 1000);
-
   });
 
-  window.onload = function () {
-    startVideoFeed();
-    // startVideoFeed2();
-  };
-
-  function startVideoFeed() {
-    var videoUrl = "http://127.0.0.1:5000/video_feed/101";
-    var videoElement = document.getElementById("video_feed");
-    videoElement.src = videoUrl;
+  function updateCameraStatus(data) {
+    var statusElement = $('#cameraStatus');
+    if (data.status) {
+      statusElement.removeClass('bg-danger').addClass('bg-success');
+      statusElement.text('Online');
+    } else {
+      statusElement.removeClass('bg-success').addClass('bg-danger');
+      statusElement.text('Offline');
+    }
   }
 
-  function updateCamera() {
-    var videoUrl = "http://127.0.0.1:5000/video_feed";
-    var videoElement = $('<img>', { id: 'video_feed', src: videoUrl, alt: 'RTSP Yayını' });
+  function addOrUpdateCamera() {
+    var cameraId = $('#cameraId').val();
+    var ip = $('#cameraIp').val();
+    var port = $('#cameraPort').val();
+    var username = $('#cameraUsername').val();
+    var password = $('#cameraPassword').val();
+    var url = $('#cameraUrl').val();
 
-    $('#videoContainer').empty().append(videoElement);
+    fetch('/add_camera', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ip: ip,
+        port: port,
+        username: username,
+        password: password,
+        url: url,
+        id: cameraId
+      })
+    })
+      .then(response => response.json())
+      .then(data => {
+        toastr.success("data.message");
+        $('#addCameraModal').modal('hide');
+        swal.fire({
+          title: 'Success',
+          text: data.message,
+          icon: 'success',
+          showConfirmButton: false,
+          timer: 2000,
+        });
+        location.reload();
+      })
+      .catch((error) => {
+        toastr.error('Error:', error);
+      });
   }
 
-  $('#startRecordingButton').click(function () {
-    $.get('/start_continuous_record', function (data) {
-      toastr.success(data.message);
+  $('#addCameraForm').submit(function (e) {
+    e.preventDefault();
+    addOrUpdateCamera();
+  });
+
+  function startRecording(cameraId) {
+    $.get(`/start_continuous_record/${cameraId}`, function (data) {
+      toastr.success("data.message");
+      console.log(data);
     }).fail(function () {
+      console.log(data);
       toastr.error("Error starting continuous recording.");
     });
-  });
+  }
 
-  $('#stopRecordingButton').click(function () {
-    $.get('/stop_continuous_record', function (data) {
-      toastr.success(data.message);
+  function stopRecording(cameraId) {
+    $.get(`/stop_continuous_record/${cameraId}`, function (data) {
+      console.log(data);
+      toastr.success("data.message");
     }).fail(function () {
+      console.log(data);
       toastr.error("Error stopping continuous recording.");
     });
-  });
+  }
 
-  $('#empTable').pagination({
-    dataSource: 'https://api.flickr.com/services/feeds/photos_public.gne?tags=cat&tagmode=any&format=json&jsoncallback=?',
-    locator: 'items',
-    totalNumber: 120,
-    pageSize: 20,
-    ajax: {
-      beforeSend: function () {
-        dataContainer.html('Loading data from flickr.com ...');
+  function showEditModal(cameraId) {
+    $.ajax({
+      type: 'GET',
+      url: '/get_camera_info/' + cameraId,
+      success: function (response) {
+        var cameraInfo = response.cameraInfo;
+
+        $('#cameraIp').val(cameraInfo.ip);
+        $('#cameraPort').val(cameraInfo.port);
+        $('#cameraUrl').val(cameraInfo.url);
+        $('#cameraUsername').val(cameraInfo.username);
+        $('#cameraPassword').val(cameraInfo.password);
+        $('#cameraId').val(cameraId);
+        $('#addCameraModal').modal('show');
+      },
+      error: function (xhr, status, error) {
+        console.error('Error:', error);
       }
-    },
-    callback: function (data, pagination) {
-      // template method of yourself
-      var html = template(data);
-      dataContainer.html(html);
-    }
-  });
-
-
+    });
+    $('#addCameraModal').modal('show');
+  }
 </script>
+
+<style>
+  .footer {
+    background: #dedede5b;
+    z-index: 1002;
+  }
+
+  @media (min-height: 100vh) {
+    .footer {
+      position: sticky;
+      bottom: 0;
+    }
+  }
+  
+</style>
