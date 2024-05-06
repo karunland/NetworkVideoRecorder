@@ -149,9 +149,14 @@ def start_camera_command():
 
 @app.route('/', methods=['GET', 'POST', 'PUT'])
 @app.route('/index', methods=['GET', 'POST', 'PUT'])
+@app.route('/newIndex', methods=['GET', 'POST', 'PUT'])
 @app.route('/home', methods=['GET', 'POST', 'PUT'])
 def index():
+    # if url is /index direct to newIndex.html
     global username, password, status
+    if request.path == '/newIndex':
+        return render_template('newIndex.html')
+    
     if request.method == 'POST' or request.method == 'PUT':
         data = request.json
         username = data.get('username', username)
@@ -172,7 +177,7 @@ def index():
         recordings.append(file_info)
 
     recordings = sorted(recordings, key=lambda x: x['created_at'], reverse=True)
-    return render_template('index.html', status=status, username=username, password=password, recordings=recordings, cameras=cameras, camera_count=len(cameras))
+    return render_template('newIndex.html', status=status, username=username, password=password, recordings=recordings, cameras=cameras, camera_count=len(cameras))
 
 @app.route('/recordingList', methods=['GET', 'POST'])
 def recording_list():
@@ -287,6 +292,8 @@ if __name__ == "__main__":
         # add default camera to list
         cameras.append(Camera(ip='localhost', port='8554', username='username', password='password', url='/stream', id=0))
         cameras.append(Camera(ip='192.168.1.195', port='8554', username='username', password='password', url='/stream', id=1))
+        cameras.append(Camera(ip='192.168.1.195', port='8554', username='username', password='password', url='/stream', id=2))
+        cameras.append(Camera(ip='192.168.1.195', port='8554', username='username', password='password', url='/stream', id=3))
         
         app.run("0.0.0.0", "5000", False)
     except KeyboardInterrupt:
