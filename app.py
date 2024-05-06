@@ -5,7 +5,7 @@ import psutil
 import cv2
 import os
 from datetime import datetime, timedelta
-from flask_cors import CORS
+# from flask_cors import CORS
 from cam import Camera
 
 os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;udp"
@@ -43,7 +43,6 @@ def record_stream(camera: Camera):
         
         print(f"Recording duration exceeded for camera {camera.id}. Restarting recording...")
         record_stream(camera)
-        
 
 
 @app.route('/start_continuous_record/<int:camera_id>', methods=['GET'])
@@ -115,7 +114,7 @@ def video_feed():
 
 def run_camera_command():
     global camera_process, status
-    cmd = f"rpicam-vid -n -p 0,0,640,480 --vflip --framerate 24 --bitrate 2000000 -t 0 --inline -o - | cvlc -vvv stream:///dev/stdin --sout '#rtp{{sdp=rtsp://:8554/stream}}' :demux=h264 :h264-fps=24 --sout-rtsp-user {username} --sout-rtsp-pwd {password}"
+    cmd = f"rpicam-vid -n -p 0,0,640,480 --vflip --hflip --framerate 24 --bitrate 2000000 -t 0 --inline -o - | cvlc -vvv stream:///dev/stdin --sout '#rtp{{sdp=rtsp://:8554/stream}}' :demux=h264 :h264-fps=24 --sout-rtsp-user {username} --sout-rtsp-pwd {password}"
     camera_process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
     status = True
 
@@ -148,15 +147,9 @@ def start_camera_command():
     return jsonify({"message": "Camera already running"})
 
 @app.route('/', methods=['GET', 'POST', 'PUT'])
-@app.route('/index', methods=['GET', 'POST', 'PUT'])
-@app.route('/newIndex', methods=['GET', 'POST', 'PUT'])
-@app.route('/home', methods=['GET', 'POST', 'PUT'])
 def index():
-    # if url is /index direct to newIndex.html
     global username, password, status
-    if request.path == '/newIndex':
-        return render_template('newIndex.html')
-    
+   
     if request.method == 'POST' or request.method == 'PUT':
         data = request.json
         username = data.get('username', username)
@@ -165,6 +158,11 @@ def index():
         start_camera_command()
         return jsonify({"message": "Credentials updated successfully", "status": status, "username": username, "password": password})
     
+    return render_template('index.html', status=status, username=username, password=password, cameras=cameras, camera_count=len(cameras))
+
+@app.route('/recordings', methods=['GET', 'POST'])
+def recording_list():
+    global username, password, status
     recordings = []
     for filename in os.listdir(RECORDINGS_FOLDER):
         filepath = os.path.join(RECORDINGS_FOLDER, filename)
@@ -176,44 +174,10 @@ def index():
         }
         recordings.append(file_info)
 
-    recordings = sorted(recordings, key=lambda x: x['created_at'], reverse=True)
-    return render_template('newIndex.html', status=status, username=username, password=password, recordings=recordings, cameras=cameras, camera_count=len(cameras))
+    recordings = sorted(recordings, key=lambda x: x['created_at'], reverse=False)
 
-@app.route('/recordingList', methods=['GET', 'POST'])
-def recording_list():
-    recordings = []
-    draw = request.form['draw'] 
-    row = int(request.form['start'])
-    rowperpage = int(request.form['length'])
-    searchValue = request.form["search[value]"]
-
-    for filename in os.listdir(RECORDINGS_FOLDER):
-        filepath = os.path.join(RECORDINGS_FOLDER, filename)
-        file_stat = os.stat(filepath)
-        file_info = {
-            'name': filename,
-            'size': f"{file_stat.st_size / (1024 * 1024):.2f} MB",
-            'created_at': datetime.fromtimestamp(file_stat.st_ctime).strftime("%Y-%m-%d %H:%M:%S.%f")[:-2] # type: ignore
-        }
-        recordings.append(file_info)
-
-    total_count = len(recordings)
-
-    if searchValue:
-        recordings = [rec for rec in recordings if searchValue.lower() in rec['name'].lower()]
-
-    recordings = sorted(recordings, key=lambda x: x['created_at'], reverse=True)
-    recordings = recordings[row: row + rowperpage]
-
-    response = {
-        'draw': draw,
-        'recordsTotal': total_count,
-        'recordsFiltered': recordings.length,
-        'data': recordings,
-    }
-
-    return jsonify(response)
-
+    return render_template('recordings.html', status=status, username=username, password=password, cameras=cameras, camera_count=len(cameras), recordings=recordings)
+ 
 @app.route('/stop', methods=['GET'])
 def stop_camera():
     stop_camera_command()
@@ -290,10 +254,10 @@ if __name__ == "__main__":
     try:
         Thread(target=run_camera_command).start()
         # add default camera to list
-        cameras.append(Camera(ip='localhost', port='8554', username='username', password='password', url='/stream', id=0))
-        cameras.append(Camera(ip='192.168.1.195', port='8554', username='username', password='password', url='/stream', id=1))
-        cameras.append(Camera(ip='192.168.1.195', port='8554', username='username', password='password', url='/stream', id=2))
-        cameras.append(Camera(ip='192.168.1.195', port='8554', username='username', password='password', url='/stream', id=3))
+        cameras.append(Camera(ip='127.0.0.1', port='8554', username=f"{username}", password=f"{password}", url='/stream', id=0))
+        cameras.append(Camera(ip='10.42.0.141', port='8554', username=f"{username}", password=f"{password}", url='/stream', id=1))
+        # cameras.append(Camera(ip='10.42.0.141', port='8554', username=f"{username}", password=f"{password}", url='/stream', id=2))
+        # cameras.append(Camera(ip='10.42.0.141', port='8554', username=f"{username}", password=f"{password}", url='/stream', id=3))
         
         app.run("0.0.0.0", "5000", False)
     except KeyboardInterrupt:
