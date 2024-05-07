@@ -42,7 +42,7 @@ def record_stream(camera: Camera):
             print(f"Error occurred during recording for camera {camera.id}: {stderr.decode('utf-8')}")
         
         print(f"Recording duration exceeded for camera {camera.id}. Restarting recording...")
-        record_stream(camera)
+        # record_stream(camera)
 
 
 @app.route('/start_continuous_record/<int:camera_id>', methods=['GET'])
@@ -81,8 +81,8 @@ def stop_continuous_record_route(camera_id):
 
 
 def gen_frames(camera: Camera):
-    app = camera.__str__()
-    cap = cv2.VideoCapture(app, cv2.CAP_FFMPEG)
+    url = camera.__str__()
+    cap = cv2.VideoCapture(url, cv2.CAP_FFMPEG)
     while True:
         success, frame = cap.read()
         if not success:
@@ -97,6 +97,7 @@ def gen_frames(camera: Camera):
             frame = buffer.tobytes()
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
 
 @app.route('/video_feed', methods=['GET'])
 def video_feed():
@@ -199,6 +200,10 @@ def add_or_update_camera():
     data = request.json
     ip = data.get('ip')
     port = data.get('port')
+
+    if ip == '':
+        return { "error" : "bad request"}, 404
+
     username = data.get('username')
     password = data.get('password')
     url = data.get('url')

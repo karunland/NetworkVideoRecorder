@@ -433,7 +433,6 @@
       url: '/get_camera_info/' + cameraId,
       success: function (response) {
         var cameraInfo = response.cameraInfo;
-
         $('#cameraIp').val(cameraInfo.ip);
         $('#cameraPort').val(cameraInfo.port);
         $('#cameraUrl').val(cameraInfo.url);
@@ -446,7 +445,6 @@
         console.error('Error:', error);
       }
     });
-    $('#addCameraModal').modal('show');
   }
 </script>
 
