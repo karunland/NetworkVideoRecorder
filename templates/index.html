@@ -243,33 +243,84 @@
             <input id="cameraId" value="" name="cameraId" type="hidden" />
             <div class="mb-3">
               <label for="cameraIp" class="form-label">Camera IP Address</label>
-              <input type="text" class="form-control" id="cameraIp" name="cameraIp" value="127.0.0.1"
+              <input type="text" class="form-control" id="cameraIp" value="127.0.0.1"
                 placeholder="Enter IP Address">
             </div>
             <div class="mb-3">
               <label for="cameraPort" class="form-label">Camera Port</label>
-              <input type="text" class="form-control" id="cameraPort" name="cameraPort" value="8554"
+              <input type="text" class="form-control" id="cameraPort" value="8554"
                 placeholder="Enter Port">
             </div>
             <div class="mb-3">
               <label for="cameraUrl" class="form-label">Url</label>
-              <input type="text" class="form-control" id="cameraUrl" name="cameraUrl" value="/stream"
+              <input type="text" class="form-control" id="cameraUrl" value="/stream"
                 placeholder="Enter Url">
             </div>
             <div class="mb-3">
               <label for="cameraUsername" class="form-label">Username</label>
-              <input type="text" class="form-control" id="cameraUsername" value="username" name="cameraUsername"
+              <input type="text" class="form-control" id="cameraUsername" name="cameraUsername"
                 placeholder="Enter Username">
             </div>
             <div class="mb-3">
               <label for="cameraPassword" class="form-label">Password</label>
-              <input type="password" class="form-control" id="cameraPassword" value="password" name="cameraPassword"
+              <input type="password" class="form-control" id="cameraPassword" name="cameraPassword"
                 placeholder="Enter Password">
             </div>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
             <button type="submit" class="btn btn-primary">Add Camera</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <!-- camera add modal end -->
+
+
+  <!-- update camera modal ;/// -->
+  <div class="modal fade" id="updateCameraModal" tabindex="-1" role="dialog" aria-labelledby="updateCameraModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="updateCameraModalLabel">Update Camera</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <form id="updateCameraForm">
+          <div class="modal-body">
+            <input id="cameraIdUpdate" value="" name="cameraIdUpdate" type="hidden" />
+            <div class="mb-3">
+              <label for="cameraIp" class="form-label">Camera IP Address</label>
+              <input type="text" class="form-control" id="cameraIpUpdate" value="127.0.0.1"
+                placeholder="Enter IP Address">
+            </div>
+            <div class="mb-3">
+              <label for="cameraPortUpdate" class="form-label">Camera Port</label>
+              <input type="text" class="form-control" id="cameraPortUpdate" value="8554"
+                placeholder="Enter Port">
+            </div>
+            <div class="mb-3">
+              <label for="cameraUrlUpdate" class="form-label">Url</label>
+              <input type="text" class="form-control" id="cameraUrlUpdate" value="/stream"
+                placeholder="Enter Url">
+            </div>
+            <div class="mb-3">
+              <label for="cameraUsernameUpdate" class="form-label">Username</label>
+              <input type="text" class="form-control" id="cameraUsernameUpdate" value=""
+                placeholder="Enter Username">
+            </div>
+            <div class="mb-3">
+              <label for="cameraPasswordUpdate" class="form-label">Password</label>
+              <input type="password" class="form-control" id="cameraPasswordUpdate" value="cameraPasswordUpdate"
+                placeholder="Enter Password">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
           </div>
         </form>
       </div>
@@ -346,7 +397,7 @@
     }
   }
 
-  function addOrUpdateCamera() {
+  function addCamera() {
     var cameraId = $('#cameraId').val();
     var ip = $('#cameraIp').val();
     var port = $('#cameraPort').val();
@@ -386,9 +437,54 @@
       });
   }
 
+  function updateCamera() {
+    var cameraId = $('#cameraIdUpdate').val();
+    var ip = $('#cameraIpUpdate').val();
+    var port = $('#cameraPortUpdate').val();
+    var username = $('#cameraUsernameUpdate').val();
+    var password = $('#cameraPasswordUpdate').val();
+    var url = $('#cameraUrlUpdate').val();
+    debugger;
+    fetch('/add_camera', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ip: ip,
+        port: port,
+        username: username,
+        password: password,
+        url: url,
+        id: cameraId
+      })
+    })
+      .then(response => response.json())
+      .then(data => {
+        toastr.success("data.message");
+        $('#updateCameraModal').modal('hide');
+        swal.fire({
+          title: 'Success',
+          text: data.message,
+          icon: 'success',
+          showConfirmButton: false,
+          timer: 2000,
+        });
+        location.reload();
+      })
+      .catch((error) => {
+        toastr.error('Error:', error);
+      });
+  }
+
   $('#addCameraForm').submit(function (e) {
     e.preventDefault();
-    addOrUpdateCamera();
+    addCamera();
+  });
+
+  $('#updateCameraForm').submit(function (e) {
+    e.preventDefault();
+    updateCamera();
   });
 
   function startRecording(cameraId) {
@@ -433,13 +529,13 @@
       url: '/get_camera_info/' + cameraId,
       success: function (response) {
         var cameraInfo = response.cameraInfo;
-        $('#cameraIp').val(cameraInfo.ip);
-        $('#cameraPort').val(cameraInfo.port);
-        $('#cameraUrl').val(cameraInfo.url);
-        $('#cameraUsername').val(cameraInfo.username);
-        $('#cameraPassword').val(cameraInfo.password);
-        $('#cameraId').val(cameraId);
-        $('#addCameraModal').modal('show');
+        $('#cameraIpUpdate').val(cameraInfo.ip);
+        $('#cameraPortUpdate').val(cameraInfo.port);
+        $('#cameraUrlUpdate').val(cameraInfo.url);
+        $('#cameraUsernameUpdate').val(cameraInfo.username);
+        $('#cameraPasswordUpdate').val(cameraInfo.password);
+        $('#cameraIdUpdate').val(cameraId);
+        $('#updateCameraModal').modal('show');
       },
       error: function (xhr, status, error) {
         console.error('Error:', error);
