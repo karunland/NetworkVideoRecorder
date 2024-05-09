@@ -50,9 +50,9 @@
           <span>RECORDINGS</span></a>
       </li>
       <!-- Sidebar Toggler (Sidebar) -->
-      <div class="text-center d-none d-md-inline">
+      <!-- <div class="text-center d-none d-md-inline">
         <button class="rounded-circle border-0" id="sidebarToggle"></button>
-      </div>
+      </div> -->
     </ul>
     <!-- End of Sidebar -->
 
@@ -140,43 +140,57 @@
 
         <!-- Begin Page Content -->
         <div class="container-fluid">
-          <div class="row ">
-            <div class="ml-auto">
+          <div class="row mx-1">
+            <div class="mr-auto">
 
-              <a type="button" class="btn-primary" style="padding: 10px;border-radius: 25px;text-decoration: none;"
-              data-toggle="modal" data-target="#addCameraModal">
-              <i class="bi bi-plus"></i> Add Camera
-            </a>
+              <a type="button" class="btn-primary" style="padding: 10px;border-radius: 8px;text-decoration: none;"
+                data-toggle="modal" data-target="#addCameraModal">
+                <i class="bi bi-plus"></i> Add Camera
+              </a>
             </div>
-          
+
           </div>
           <div class="row" style="display: flex;">
             {% for camera_info in cameras %}
-            <div class="col-xl-4 col-md-6 col-sm-12" style="padding: 50px;">
-              <div class="row" id="videoContainer" style="position: relative; min-height: 440px;">
+            <div class="col-xl-4 col-md-6 col-sm-12" style="padding: 30px;">
+              <div class="row" id="videoContainer"
+                style="position: relative; min-height: 380px;border-radius: 8px;border: 1px solid black;">
                 <img id="video_feed_{{ loop.index }}"
                   src="{{ url_for('video_feed', ip=camera_info.ip, port=camera_info.port, username=camera_info.username, password=camera_info.password, url=camera_info.url) }}"
-                  alt="RTSP Yayını" style="max-width: 100%; max-height: 100%; z-index:1001;">
+                  alt="RTSP Yayını" style="max-width: 100%; max-height: 100%; z-index:1001;border-radius: 8px;">
                 <div class="overlay"
-                  style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center;">
-                  <p style="color: white;">Yayın mevcut değil</p>
+                  style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center;border-radius: 8px;">
+                  <p style="color: white;">No Stream</p>
                 </div>
                 <div class="controls"
                   style="position: absolute; left: 10px;  z-index: 1002;bottom: 10px;display: flex;">
-                  <button id="startRecordingButton" onclick="startRecording({{ camera_info.id }})">Kaydı Başlat</button>
-                  <button id="stopRecordingButton" onclick="stopRecording({{ camera_info.id }})">Durdur</button>
+                  <button id="startRecordingButton" class="btn btn-sm btn-primary mx-1"
+                    onclick="startRecording({{ camera_info.id }})">Start Rec.</button>
+                  <button id="stopRecordingButton" class="btn btn-sm btn-danger"
+                    onclick="stopRecording({{ camera_info.id }})">Stop Rec.</button>
                 </div>
                 <div class="controls" style="position: absolute; top: 10px;  z-index: 1002;right: 10px;">
-                  <button style="border-radius: 50%;" id="updateCamera"
-                    onclick="showEditModal({{ camera_info.id }})">...</button>
+                  <a class="nav-link dropdown-toggle btn btn-sm" id="cameraUpdateDrop" role="button"
+                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  </a>
+                  <!-- Dropdown - User Information -->
+                  <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
+                    aria-labelledby="cameraUpdateDrop" style="z-index: 1003;">
+                    <button class="dropdown-item" style="border-radius: 8px;background-color: #dedede;"
+                      id="updateCamera" class="btn" onclick="showEditModal({{ camera_info.id }})">
+                      <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
+                      Update
+                    </button>
+                  </div>
                 </div>
-              </div>
-              <div style="font-size: 13px;margin-top: 10px;font-weight: 700;">
-                <p>Camera IP: <b>{{ camera_info.ip }}</b></p>
-                <p>Camera Port: <b>{{ camera_info.port }}</b></p>
-                <p>Username: <b>{{ camera_info.username }}</b></p>
-                <p>Password: <b>{{ camera_info.password }}</b></p>
-                <p>url: <b>{{ camera_info.url }}</b></p>
+                <div id="cameraInfo"
+                  style="font-size: 13px; font-weight: 500; position: absolute; top: 10px; left: 10px;color: white;">
+                  <p>Camera IP: <b>{{ camera_info.ip }}</b></p>
+                  <p>Camera Port: <b>{{ camera_info.port }}</b></p>
+                  <p>Username: <b>{{ camera_info.username }}</b></p>
+                  <p>Password: <b>{{ camera_info.password }}</b></p>
+                  <p>url: <b>{{ camera_info.url }}</b></p>
+                </div>
               </div>
             </div>
             {% endfor %}
@@ -243,18 +257,15 @@
             <input id="cameraId" value="" name="cameraId" type="hidden" />
             <div class="mb-3">
               <label for="cameraIp" class="form-label">Camera IP Address</label>
-              <input type="text" class="form-control" id="cameraIp" value="127.0.0.1"
-                placeholder="Enter IP Address">
+              <input type="text" class="form-control" id="cameraIp" value="127.0.0.1" placeholder="Enter IP Address">
             </div>
             <div class="mb-3">
               <label for="cameraPort" class="form-label">Camera Port</label>
-              <input type="text" class="form-control" id="cameraPort" value="8554"
-                placeholder="Enter Port">
+              <input type="text" class="form-control" id="cameraPort" value="8554" placeholder="Enter Port">
             </div>
             <div class="mb-3">
               <label for="cameraUrl" class="form-label">Url</label>
-              <input type="text" class="form-control" id="cameraUrl" value="/stream"
-                placeholder="Enter Url">
+              <input type="text" class="form-control" id="cameraUrl" value="/stream" placeholder="Enter Url">
             </div>
             <div class="mb-3">
               <label for="cameraUsername" class="form-label">Username</label>
@@ -299,18 +310,15 @@
             </div>
             <div class="mb-3">
               <label for="cameraPortUpdate" class="form-label">Camera Port</label>
-              <input type="text" class="form-control" id="cameraPortUpdate" value="8554"
-                placeholder="Enter Port">
+              <input type="text" class="form-control" id="cameraPortUpdate" value="8554" placeholder="Enter Port">
             </div>
             <div class="mb-3">
               <label for="cameraUrlUpdate" class="form-label">Url</label>
-              <input type="text" class="form-control" id="cameraUrlUpdate" value="/stream"
-                placeholder="Enter Url">
+              <input type="text" class="form-control" id="cameraUrlUpdate" value="/stream" placeholder="Enter Url">
             </div>
             <div class="mb-3">
               <label for="cameraUsernameUpdate" class="form-label">Username</label>
-              <input type="text" class="form-control" id="cameraUsernameUpdate" value=""
-                placeholder="Enter Username">
+              <input type="text" class="form-control" id="cameraUsernameUpdate" value="" placeholder="Enter Username">
             </div>
             <div class="mb-3">
               <label for="cameraPasswordUpdate" class="form-label">Password</label>
@@ -397,84 +405,30 @@
     }
   }
 
-  function addCamera() {
-    var cameraId = $('#cameraId').val();
-    var ip = $('#cameraIp').val();
-    var port = $('#cameraPort').val();
-    var username = $('#cameraUsername').val();
-    var password = $('#cameraPassword').val();
-    var url = $('#cameraUrl').val();
-
-    fetch('/add_camera', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        ip: ip,
-        port: port,
-        username: username,
-        password: password,
-        url: url,
-        id: cameraId
-      })
-    })
-      .then(response => response.json())
-      .then(data => {
-        toastr.success("data.message");
-        $('#addCameraModal').modal('hide');
-        swal.fire({
-          title: 'Success',
-          text: data.message,
-          icon: 'success',
-          showConfirmButton: false,
-          timer: 2000,
-        });
+  function addOrUpdateCamera(cameraId, ip, port, username, password, url, modalId) {
+    $.ajax({
+      url: '/add_camera',
+      type: 'POST',
+      contentType: 'application/json',
+      data: JSON.stringify({ id: cameraId, ip, port, username, password, url }),
+      success: function (data) {
+        toastr.success(data.message);
+        $(`#${modalId}`).modal('hide');
+        swal.fire({ title: 'Success', text: data.message, icon: 'success', showConfirmButton: false, timer: 2000 });
         location.reload();
-      })
-      .catch((error) => {
+      },
+      error: function (xhr, status, error) {
         toastr.error('Error:', error);
-      });
+      }
+    });
+  }
+
+  function addCamera() {
+    addOrUpdateCamera($('#cameraId').val(), $('#cameraIp').val(), $('#cameraPort').val(), $('#cameraUsername').val(), $('#cameraPassword').val(), $('#cameraUrl').val(), 'addCameraModal');
   }
 
   function updateCamera() {
-    var cameraId = $('#cameraIdUpdate').val();
-    var ip = $('#cameraIpUpdate').val();
-    var port = $('#cameraPortUpdate').val();
-    var username = $('#cameraUsernameUpdate').val();
-    var password = $('#cameraPasswordUpdate').val();
-    var url = $('#cameraUrlUpdate').val();
-    debugger;
-    fetch('/add_camera', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        ip: ip,
-        port: port,
-        username: username,
-        password: password,
-        url: url,
-        id: cameraId
-      })
-    })
-      .then(response => response.json())
-      .then(data => {
-        toastr.success("data.message");
-        $('#updateCameraModal').modal('hide');
-        swal.fire({
-          title: 'Success',
-          text: data.message,
-          icon: 'success',
-          showConfirmButton: false,
-          timer: 2000,
-        });
-        location.reload();
-      })
-      .catch((error) => {
-        toastr.error('Error:', error);
-      });
+    addOrUpdateCamera($('#cameraIdUpdate').val(), $('#cameraIpUpdate').val(), $('#cameraPortUpdate').val(), $('#cameraUsernameUpdate').val(), $('#cameraPasswordUpdate').val(), $('#cameraUrlUpdate').val(), 'updateCameraModal');
   }
 
   $('#addCameraForm').submit(function (e) {
@@ -491,34 +445,34 @@
     $.get(`/start_continuous_record/${cameraId}`, function (data) {
       // toastr.success("data.message");
       swal.fire({
-          title: 'Success',
-          text: data.message,
-          icon: 'success',
-          showConfirmButton: false,
-          timer: 3400,
-        });
-      console.log(data);
-      console.log(data.message);
+        title: 'Success',
+        text: data.message,
+        icon: 'success',
+        showConfirmButton: false,
+        timer: 3400,
+      });
+      // console.log(data);
+      // console.log(data.message);
     }).fail(function () {
-      console.log(data);
+      // console.log(data);
       toastr.error("Error starting continuous recording.");
     });
   }
 
   function stopRecording(cameraId) {
     $.get(`/stop_continuous_record/${cameraId}`, function (data) {
-      console.log(data);
-      console.log(data.message);
+      // console.log(data);
+      // console.log(data.message);
       // toastr.success("data.message");
       swal.fire({
-          title: 'Success',
-          text: data.message,
-          icon: 'success',
-          showConfirmButton: false,
-          timer: 3400,
-        });
+        title: 'Success',
+        text: data.message,
+        icon: 'success',
+        showConfirmButton: false,
+        timer: 3400,
+      });
     }).fail(function () {
-      console.log(data);
+      // console.log(data);
       toastr.error("Error stopping continuous recording.");
     });
   }
@@ -555,5 +509,28 @@
       position: sticky;
       bottom: 0;
     }
+  }
+
+  p {
+    margin-bottom: 0px !important;
+  }
+
+  #videoContainer #cameraInfo {
+    opacity: 0.4;
+    transition: opacity 0.5s;
+  }
+
+  #videoContainer:hover #cameraInfo {
+    opacity: 0.9;
+  }
+
+  #videoContainer .overlay {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  #videoContainer:hover .overlay {
+    display: none;
   }
 </style>
