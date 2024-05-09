@@ -8,7 +8,9 @@ class Camera:
         self.password = password
         self.url = url
         self.multiCastUrl = multiCastUrl
-        self.recordConstant = False
+        self.recordingStatus = False
+        self.streamStatus = True
+
 
     def __str__(self):
         return f"rtsp://{self.username + ':' + self.password + '@' if self.username and self.password else ''}{self.ip}{':' + self.port if self.port else ''}{self.url if self.url else ''}"

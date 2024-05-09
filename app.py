@@ -18,12 +18,23 @@ username = "username"
 password = "password"
 camera_process = None
 status = False
-camera_processes = {}
-continuous_record = False
+camera_process = None
+# camera_processes = {}
+# continuous_record = False
+cameras = []
+
+
+def updateCamera(camera: Camera):
+    global cameras
+    for item in cameras:
+        if item.id == camera.id:
+            item = camera
+            break
+
 
 def record_stream(camera: Camera):
     while True:
-        if camera.recordConstant is False:
+        if camera.recordingStatus is False:
             print(f"Recording stopped for camera {camera.id}.")
             break
 
@@ -35,14 +46,13 @@ def record_stream(camera: Camera):
         command = ['ffmpeg', '-i', camera.__str__(), '-t', str(record_duration), '-c:v', 'copy', filename]
 
         process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        camera_processes[camera.id] = process
+        # camera_processes[camera.id] = process
         stdout, stderr = process.communicate()
 
         if process.returncode != 0:
             print(f"Error occurred during recording for camera {camera.id}: {stderr.decode('utf-8')}")
         
         print(f"Recording duration exceeded for camera {camera.id}. Restarting recording...")
-        # record_stream(camera)
 
 
 @app.route('/start_continuous_record/<int:camera_id>', methods=['GET'])
@@ -51,14 +61,16 @@ def start_continuous_record_route(camera_id):
         if camera.id == camera_id:
             camera = camera
             break
-    if camera:
-        global continuous_record
-        # continuous_record = True
-        camera.recordConstant = True
-        Thread(target=record_stream, kwargs={'camera': camera}).start()
-        return {"message": f"Continuous recording started successfully for camera {camera.id}"}
-    else:
+    if camera is None:
         return jsonify({"error": "Camera not found"}), 404
+    
+    if camera.streamStatus == False:
+        return {"message": f"Camera {camera_id} is not streaming. Start streaming first."}
+
+    camera.recordingStatus = True
+    updateCamera(camera)
+    Thread(target=record_stream, kwargs={'camera': camera}).start()
+    return {"message": f"Continuous recording started successfully for camera {camera.id}"}
 
 
 @app.route('/stop_continuous_record/<int:camera_id>', methods=['GET'])
@@ -68,13 +80,11 @@ def stop_continuous_record_route(camera_id):
             camera = camera
             break
     if camera:
-        process = camera_processes[camera_id]
-        if process is None:
+        if camera.recordingStatus is False:
             return {"message": f"No active recording process found for camera {camera_id}"}
-        global continuous_record
-        camera.recordConstant = False
-        # process.terminate()
-        del camera_processes[camera_id]
+
+        camera.recordingStatus = False
+        updateCamera(camera)
         return {"message": f"Continuous recording stopped successfully for camera {camera_id}"}
     else:
         return jsonify({"error": "Camera not found"}), 404
@@ -83,20 +93,43 @@ def stop_continuous_record_route(camera_id):
 def gen_frames(camera: Camera):
     url = camera.__str__()
     cap = cv2.VideoCapture(url, cv2.CAP_FFMPEG)
+    global cameras
+    if not cap.isOpened():
+        # camera.streamStatus = False
+        for item in cameras:
+            if item.id == camera.id:
+                item.streamStatus = False
+                break
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + 
+               b'Error: Could not open camera stream\r\n')
+        return
+    
     while True:
         success, frame = cap.read()
         if not success:
-            break
-        else:
-            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S:%f")
-            cv2.putText(frame, current_time, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-            
-            ret, buffer = cv2.imencode('.jpg', frame)
-            if not ret:
-                break
-            frame = buffer.tobytes()
             yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+                   b'Content-Type: image/jpeg\r\n\r\n' + 
+                   b'Error: Could not read frame from camera stream\r\n')
+            break
+
+        for item in cameras:
+            if item.id == camera.id:
+                item.streamStatus = True
+                break
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S:%f")
+        cv2.putText(frame, current_time, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+        
+        ret, buffer = cv2.imencode('.jpg', frame)
+        if not ret:
+            yield (b'--frame\r\n'
+                    b'Content-Type: image/jpeg\r\n\r\n' + 
+                    b'Error: Could not encode frame to JPEG\r\n')
+            break
+        
+        frame = buffer.tobytes()
+        yield (b'--frame\r\n'
+                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
 
 @app.route('/video_feed', methods=['GET'])
@@ -112,6 +145,7 @@ def video_feed():
     gen = gen_frames(camera)
 
     return Response(gen, mimetype='multipart/x-mixed-replace; boundary=frame')
+
 
 def run_camera_command():
     global camera_process, status
@@ -151,7 +185,7 @@ def start_camera_command():
 @app.route('/', methods=['GET', 'POST', 'PUT'])
 def index():
     global username, password, status
-   
+
     if request.method == 'POST' or request.method == 'PUT':
         data = request.json
         username = data.get('username', username)
@@ -161,6 +195,7 @@ def index():
         return jsonify({"message": "Credentials updated successfully", "status": status, "username": username, "password": password})
     
     return render_template('index.html', status=status, username=username, password=password, cameras=cameras, camera_count=len(cameras))
+
 
 @app.route('/recordings', methods=['GET', 'POST'])
 def recording_list():
@@ -180,31 +215,33 @@ def recording_list():
 
     return render_template('recordings.html', status=status, username=username, password=password, cameras=cameras, camera_count=len(cameras), recordings=recordings)
  
+
 @app.route('/stop', methods=['GET'])
 def stop_camera():
     stop_camera_command()
     return jsonify({"message": "Camera stopped successfully"})
 
+
 @app.route('/start', methods=['GET'])
 def start_camera():
     return start_camera_command()
+
 
 @app.route('/recordings/<path:filename>', methods=['GET'])
 def download_file(filename):
     return send_from_directory(RECORDINGS_FOLDER, filename, as_attachment=True)
 
-cameras = []
 
 @app.route('/add_camera', methods=['POST'])
 def add_or_update_camera():
     global cameras
     data = request.json
     ip = data.get('ip')
-    port = data.get('port')
 
     if ip == '':
         return { "error" : "bad request"}, 404
 
+    port = data.get('port')
     username = data.get('username')
     password = data.get('password')
     url = data.get('url')
@@ -225,7 +262,7 @@ def add_or_update_camera():
         camera_id = len(cameras)
         cameras.append(Camera(ip=ip, port=port, username=username, password=password, url=url, id=camera_id))
         return jsonify({"message": "Camera added successfully", "camera_id": camera_id}), 200
-        # redirect(url_for('/'))
+
 
 @app.route('/update_camera_credentials', methods=['POST'])
 def update_camera_credentials():
@@ -245,6 +282,7 @@ def update_camera_credentials():
     else:
         return jsonify({"error": "Camera not found"}), 404
 
+
 @app.route('/get_camera_info/<int:cameraId>', methods=['GET'])
 def get_camera_info(cameraId:int):
     for camera in cameras:
@@ -256,12 +294,27 @@ def get_camera_info(cameraId:int):
     else:
         return jsonify({'success': False, 'error': 'Camera not found'}), 404
 
+
+@app.route('/delete_camera/<int:camera_id>', methods=['DELETE'])
+def delete_camera(camera_id):
+    global cameras
+    if 0 <= camera_id < len(cameras):
+        del cameras[camera_id]
+        return jsonify({"message": f"Camera with ID {camera_id} deleted successfully"}), 200
+    else:
+        return jsonify({"error": f"Camera with ID {camera_id} does not exist"}), 404
+
+
+# return all cameras
+@app.route('/cameras', methods=['GET'])
+def get_cameras():
+    return jsonify([camera.__dict__ for camera in cameras])
+
 if __name__ == "__main__":
     try:
         Thread(target=run_camera_command).start()
-        # add default camera to list
-        cameras.append(Camera(ip='127.0.0.1', port='8554', username=f"{username}", password=f"{password}", url='/stream', id=0))
-        cameras.append(Camera(ip='10.42.0.141', port='8554', username=f"{username}", password=f"{password}", url='/stream', id=1))
+        cameras.append(Camera(ip='127.0.0.1', port='8554', username=f"{username}", password=f"asdasdasd", url='/stream', id=0))
+        # cameras.append(Camera(ip='10.42.0.141', port='8554', username=f"{username}", password=f"{password}", url='/stream', id=1))
         # cameras.append(Camera(ip='10.42.0.141', port='8554', username=f"{username}", password=f"{password}", url='/stream', id=2))
         # cameras.append(Camera(ip='10.42.0.141', port='8554', username=f"{username}", password=f"{password}", url='/stream', id=3))
         

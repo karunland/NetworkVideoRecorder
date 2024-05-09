@@ -8,7 +8,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   <meta name="description" content="">
   <meta name="author" content="">
-
+  <script src="https://kit.fontawesome.com/96c25af04d.js" crossorigin="anonymous"></script>
   <title>Security Cameras</title>
 
   <!-- Custom fonts for this template-->
@@ -41,12 +41,12 @@
       <!-- Nav Item - Dashboard -->
       <li class="nav-item">
         <a class="nav-link" href="/">
-          <i class="fas fa-fw fa-tachometer-alt"></i>
+          <i class="fa-solid fa-camera"></i>
           <span>CAMERAS</span></a>
       </li>
       <li class="nav-item">
         <a class="nav-link" href="/recordings">
-          <i class="fas fa-fw fa-tachometer-alt"></i>
+          <i class="fa-solid fa-video"></i>
           <span>RECORDINGS</span></a>
       </li>
       <!-- Sidebar Toggler (Sidebar) -->
@@ -151,40 +151,66 @@
 
           </div>
           <div class="row" style="display: flex;">
+
             {% for camera_info in cameras %}
             <div class="col-xl-4 col-md-6 col-sm-12" style="padding: 30px;">
+
               <div class="row" id="videoContainer"
                 style="position: relative; min-height: 380px;border-radius: 8px;border: 1px solid black;">
                 <img id="video_feed_{{ loop.index }}"
                   src="{{ url_for('video_feed', ip=camera_info.ip, port=camera_info.port, username=camera_info.username, password=camera_info.password, url=camera_info.url) }}"
-                  alt="RTSP Yayını" style="max-width: 100%; max-height: 100%; z-index:1001;border-radius: 8px;">
+                  alt="" style="max-width: 100%; max-height: 100%; z-index:1001;border-radius: 8px;">
+
                 <div class="overlay"
                   style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center;border-radius: 8px;">
-                  <p style="color: white;">No Stream</p>
+                  <a classs="link" onclick="deleteCamera({{ camera_info.id }})"
+                    style="color: white;font-size: 34px;color: white;font-weight: 900;font-style: italic;text-align: center;">
+                    <i style="color: red;" class="fa-regular fa-trash-can"></i> No Stream
+                  </a>
                 </div>
+                <style>
+                  .link:hover {
+                    text-decoration: underline;
+                  }
+                </style>
+
                 <div class="controls"
                   style="position: absolute; left: 10px;  z-index: 1002;bottom: 10px;display: flex;">
-                  <button id="startRecordingButton" class="btn btn-sm btn-primary mx-1"
-                    onclick="startRecording({{ camera_info.id }})">Start Rec.</button>
-                  <button id="stopRecordingButton" class="btn btn-sm btn-danger"
-                    onclick="stopRecording({{ camera_info.id }})">Stop Rec.</button>
+                  <button id="startRecordingButton_{{camera_info.id}}" class="btn btn-sm btn-primary mx-1" onclick="startRecording({{ camera_info.id }})">
+                    <i class="fa-solid fa-play"></i> Start Rec.
+                  </button>
+                  <button id="stopRecordingButton_{{camera_info.id}}" class="btn btn-sm btn-danger" onclick="stopRecording({{ camera_info.id }})">
+                    <i class="fa-solid fa-stop"></i> Stop Rec.
+                  </button>
                 </div>
-                <div class="controls" style="position: absolute; top: 10px;  z-index: 1002;right: 10px;">
-                  <a class="nav-link dropdown-toggle btn btn-sm" id="cameraUpdateDrop" role="button"
-                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+
+                <!-- Dropdown - User Information -->
+
+                <div id="recordingIndicator_{{ camera_info.id }}"
+                  style="position: absolute;top: 10px;right: 50px;margin:10px;font-weight: 800;padding: 10px;z-index: 1001;">
+                </div>
+
+                <div class="controls"
+                  style="position: absolute; top: 10px;  z-index: 1002;right: 10px;background: white;border-radius: 8px;">
+                  <a class="nav-link" id="cameraUpdateDrop" role="button" data-toggle="dropdown" aria-haspopup="true"
+                    aria-expanded="false">
+                    <i class="fa-solid fa-bars"></i>
                   </a>
-                  <!-- Dropdown - User Information -->
+
                   <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
-                    aria-labelledby="cameraUpdateDrop" style="z-index: 1003;">
-                    <button class="dropdown-item" style="border-radius: 8px;background-color: #dedede;"
-                      id="updateCamera" class="btn" onclick="showEditModal({{ camera_info.id }})">
-                      <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
-                      Update
-                    </button>
+                    aria-labelledby="cameraUpdateDrop" style="z-index: 1003;padding: .2rem 0.5rem;">
+                    <a class="dropdown-item" onclick="showEditModal({{ camera_info.id }})">
+                      <i class="fa-solid fa-gear"></i> Update
+                    </a>
+                    <a class="dropdown-item" onclick="deleteCamera({{ camera_info.id }})">
+                      <i class="fa-regular fa-trash-can"></i> Delete
+                    </a>
                   </div>
                 </div>
+                <!-- End Dropdown - User Information -->
+
                 <div id="cameraInfo"
-                  style="font-size: 13px; font-weight: 500; position: absolute; top: 10px; left: 10px;color: white;">
+                  style="font-size: 15px; font-weight: 500; position: absolute; bottom: 10px; right: 10px;color: white;z-index: 1001;background: rgba(0,0,0,1);padding: 5px;border-radius: 8px;">
                   <p>Camera IP: <b>{{ camera_info.ip }}</b></p>
                   <p>Camera Port: <b>{{ camera_info.port }}</b></p>
                   <p>Username: <b>{{ camera_info.username }}</b></p>
@@ -194,6 +220,7 @@
               </div>
             </div>
             {% endfor %}
+
           </div>
         </div>
         <!-- /.container-fluid -->
@@ -288,7 +315,6 @@
   </div>
   <!-- camera add modal end -->
 
-
   <!-- update camera modal ;/// -->
   <div class="modal fade" id="updateCameraModal" tabindex="-1" role="dialog" aria-labelledby="updateCameraModalLabel"
     aria-hidden="true">
@@ -334,21 +360,12 @@
       </div>
     </div>
   </div>
-  <!-- camera add modal end -->
-
-  <!-- Bootstrap core JavaScript-->
-  <!-- <script src="../static//vendor/jquery/jquery.min.js"></script>
-    <script src="../static/vendor/bootstrap/js/bootstrap.bundle.min.js"></script> 
--->
-  <!-- <script src="../static//vendor/jquery-easing/jquery.easing.min.js"></script> -->
-
-  <!-- Core plugin JavaScript-->
-  <!-- Custom scripts for all pages-->
-  <script src="../static/js/sb-admin-2.min.js"></script>
 
 </body>
 
 </html>
+
+<script src="../static/js/sb-admin-2.min.js"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.slim.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
@@ -363,8 +380,51 @@
 <script src="../static/pagination.js"></script>
 
 <script>
-  $(document).ready(function () { });
-  window.onload = function () { };
+  $(document).ready(function () {
+    setInterval(updateStatus, 1000);
+  });
+
+  function updateStatus() {
+    console.log("1 sn");
+    $.ajax({
+      url: '/cameras',
+      type: 'GET',
+      success: function (data) {
+        debugger;
+        Object.keys(data).forEach(function (cameraId) {
+          debugger;
+          var cameraStatus = data[cameraId];
+          var indicator = $('#recordingIndicator_' + cameraId);
+          var recordingButton = $('#startRecordingButton_' + cameraId);
+          var stopButton = $('#stopRecordingButton_' + cameraId);
+
+          if (cameraStatus.streamStatus == false) {
+            console.log(cameraStatus.id + ' Stream is not available');
+            // indicator.css('background-color', 'white');
+            // indicator.text('No Stream');
+            recordingButton.prop('disabled', true);
+            stopButton.prop('disabled', true);
+          } else {
+            // indicator.css('background-color', 'red');
+            indicator.text('Live');
+            if (cameraStatus.recordingStatus) {
+              recordingButton.prop('disabled', true);
+              stopButton.prop('disabled', false);
+            } else {
+              recordingButton.prop('disabled', false);
+              stopButton.prop('disabled', true);
+            }
+          }
+
+          
+        });
+      },
+      error: function (xhr, status, error) {
+        console.error('Error:', error);
+      }
+    });
+  }
+
 
   toastr.options = {
     "closeButton": false,
@@ -382,8 +442,8 @@
     "hideEasing": "linear",
     "showMethod": "fadeIn",
     "hideMethod": "fadeOut",
-    // z index
-
+    "toastClass": 'toast',
+    "z-index": 1005,
   }
 
   $('#stopCameraButton').click(function () {
@@ -393,6 +453,32 @@
       toastr.error("Error stopping the camera.");
     });
   });
+
+  function deleteCamera(cameraId) {
+    swal.fire({
+      title: 'Are you sure?',
+      text: 'You are about to delete this camera!',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes, delete it!'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        $.ajax({
+          url: `/delete_camera/${cameraId}`,
+          type: 'DELETE',
+          success: function (data) {
+            toastr.success(data.message);
+            location.reload();
+          },
+          error: function (xhr, status, error) {
+            toastr.error('Error:', error);
+          }
+        });
+      }
+    });
+  }
 
   function updateCameraStatus(data) {
     var statusElement = $('#cameraStatus');
@@ -451,18 +537,13 @@
         showConfirmButton: false,
         timer: 3400,
       });
-      // console.log(data);
-      // console.log(data.message);
     }).fail(function () {
-      // console.log(data);
       toastr.error("Error starting continuous recording.");
     });
   }
 
   function stopRecording(cameraId) {
     $.get(`/stop_continuous_record/${cameraId}`, function (data) {
-      // console.log(data);
-      // console.log(data.message);
       // toastr.success("data.message");
       swal.fire({
         title: 'Success',
@@ -472,7 +553,6 @@
         timer: 3400,
       });
     }).fail(function () {
-      // console.log(data);
       toastr.error("Error stopping continuous recording.");
     });
   }
