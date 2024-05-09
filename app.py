@@ -115,7 +115,8 @@ def video_feed():
 
 def run_camera_command():
     global camera_process, status
-    cmd = f"rpicam-vid -n -p 0,0,640,480 --vflip --hflip --framerate 24 --bitrate 2000000 -t 0 --inline -o - | cvlc -vvv stream:///dev/stdin --sout '#rtp{{sdp=rtsp://:8554/stream}}' :demux=h264 :h264-fps=24 --sout-rtsp-user {username} --sout-rtsp-pwd {password}"
+    cmd = f"rpicam-vid -n -p 0,0,320,240 --vflip --hflip --framerate 24 --bitrate 500000 -t 0 --inline -o - | cvlc -vvv stream:///dev/stdin --sout '#rtp{{sdp=rtsp://:8554/stream}}' :demux=h264 :h264-fps=24 --sout-rtsp-user {username} --sout-rtsp-pwd {password}"
+
     camera_process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
     status = True
 
