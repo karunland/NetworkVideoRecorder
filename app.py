@@ -313,7 +313,7 @@ def get_cameras():
 if __name__ == "__main__":
     try:
         Thread(target=run_camera_command).start()
-        cameras.append(Camera(ip='127.0.0.1', port='8554', username=f"{username}", password=f"asdasdasd", url='/stream', id=0))
+        cameras.append(Camera(ip='127.0.0.1', port='8554', username=f"{username}", password=f"{password}", url='/stream', id=0))
         # cameras.append(Camera(ip='10.42.0.141', port='8554', username=f"{username}", password=f"{password}", url='/stream', id=1))
         # cameras.append(Camera(ip='10.42.0.141', port='8554', username=f"{username}", password=f"{password}", url='/stream', id=2))
         # cameras.append(Camera(ip='10.42.0.141', port='8554', username=f"{username}", password=f"{password}", url='/stream', id=3))
