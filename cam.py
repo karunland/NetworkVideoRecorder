@@ -1,6 +1,6 @@
 
 class Camera:
-    def __init__(self, ip: str = "", port: str = "", username: str = "", password: str = "", url: str = "", multiCastUrl:str = "", id:int = 0):
+    def __init__(self, ip: str = "", port: str = "", username: str = "", password: str = "", url: str = "", multiCastUrl:str = "", id:int = 0, getStream:bool = False, recordingStatus:bool = False, streamStatus:bool = True, quality:int = 50, rtsp_transport:str = 'udp'):
         self.id = id
         self.ip = ip
         self.port = port
@@ -8,10 +8,18 @@ class Camera:
         self.password = password
         self.url = url
         self.multiCastUrl = multiCastUrl
-        self.recordingStatus = False
-        self.streamStatus = True
-
-
+        # kamera kayit durumu
+        self.recordingStatus = recordingStatus
+        # suan stream geliyormu
+        self.streamStatus = streamStatus
+        # arayuze stream gonderilsinmi
+        self.getStream = getStream
+        # raspberry pi camera servisi verisi icin
+        self.camera_process = None
+        # arayuze gelen kamera kalitesi
+        self.quality = quality
+        self.rtsp_transport = rtsp_transport
+    
     def __str__(self):
         return f"rtsp://{self.username + ':' + self.password + '@' if self.username and self.password else ''}{self.ip}{':' + self.port if self.port else ''}{self.url if self.url else ''}"
 

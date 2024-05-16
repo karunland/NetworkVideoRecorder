@@ -16,7 +16,7 @@
   <link
     href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
     rel="stylesheet">
-
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <!-- Custom styles for this template-->
   <link href="../static/css/sb-admin-2.min.css" rel="stylesheet">
 
@@ -147,6 +147,9 @@
                 data-toggle="modal" data-target="#addCameraModal">
                 <i class="bi bi-plus"></i> Add Camera
               </a>
+              <div>
+                <div id="clock"></div>
+              </div>
             </div>
 
           </div>
@@ -157,15 +160,18 @@
 
               <div class="row" id="videoContainer"
                 style="position: relative; min-height: 380px;border-radius: 8px;border: 1px solid black;">
-                <img id="video_feed_{{ loop.index }}"
-                  src="{{ url_for('video_feed', ip=camera_info.ip, port=camera_info.port, username=camera_info.username, password=camera_info.password, url=camera_info.url) }}"
-                  alt="" style="max-width: 100%; max-height: 100%; z-index:1001;border-radius: 8px;">
+                <img data-ip="{{ camera_info.ip }}" data-port="{{ camera_info.port }}"
+                  data-username="{{ camera_info.username }}" data-password="{{ camera_info.password }}"
+                  data-id="{{ camera_info.id }}"
+                  data-url="{{ camera_info.url }}" alt="" id="video_feed_{{ camera_info.id }}"
+                  src="{{ url_for('video_feed', id=camera_info.id)  if camera_info.getStream else 'static_image.jpg' }}"
+                  alt="" style="z-index:1001;border-radius: 8px;width: 100%;height: auto;">
 
                 <div class="overlay"
                   style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center;border-radius: 8px;">
                   <a classs="link" onclick="deleteCamera({{ camera_info.id }})"
                     style="color: white;font-size: 34px;color: white;font-weight: 900;font-style: italic;text-align: center;">
-                    <i style="color: red;" class="fa-regular fa-trash-can"></i> No Stream
+                    <i style="color: red;" class="fa-solid fa-video"></i> 
                   </a>
                 </div>
                 <style>
@@ -175,14 +181,26 @@
                 </style>
 
                 <div class="controls"
-                  style="position: absolute; left: 10px;  z-index: 1002;bottom: 10px;display: flex;">
-                  <button id="startRecordingButton_{{camera_info.id}}" class="btn btn-sm btn-primary mx-1" onclick="startRecording({{ camera_info.id }})">
+                  style="position: absolute; left: 10px; z-index: 1002; bottom: 10px; display: flex;">
+                  <button id="startRecordingButton_{{camera_info.id}}" class="btn btn-sm btn-primary mx-1"
+                    onclick="startRecording({{ camera_info.id }})">
                     <i class="fa-solid fa-play"></i> Start Rec.
                   </button>
-                  <button id="stopRecordingButton_{{camera_info.id}}" class="btn btn-sm btn-danger" onclick="stopRecording({{ camera_info.id }})">
+                  <button id="stopRecordingButton_{{camera_info.id}}" class="btn btn-sm btn-danger mx-1"
+                    onclick="stopRecording({{ camera_info.id }})">
                     <i class="fa-solid fa-stop"></i> Stop Rec.
                   </button>
+                  <button id="startStreamingButton_{{camera_info.id}}"
+                    class="btn btn-sm btn-success mx-1 start-streaming-button" data-camera-id="{{ camera_info.id }}">
+                    <i class="fa-solid fa-play"></i>
+                  </button>
+                  <button id="stopStreamingButton_{{camera_info.id}}"
+                    class="btn btn-sm btn-warning mx-1 stop-streaming-button" data-camera-id="{{ camera_info.id }}">
+                    <i class="fa fa-pause"></i>
+                  </button>
+
                 </div>
+
 
                 <!-- Dropdown - User Information -->
 
@@ -382,37 +400,75 @@
 <script>
   $(document).ready(function () {
     setInterval(updateStatus, 1000);
+    $('.start-streaming-button').click(function () {
+      var cameraId = $(this).data('camera-id');
+      startStreaming(cameraId);
+    });
+
+    $('.stop-streaming-button').click(function () {
+      var cameraId = $(this).data('camera-id');
+      stopStreaming(cameraId);
+    });
   });
 
+  function updateClock() {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    const milliseconds = String(Math.floor(now.getMilliseconds() / 10)).padStart(2, '0');
+
+    const currentTime = `${hours}:${minutes}:${seconds}:${milliseconds}`;
+    document.getElementById('clock').innerText = currentTime;
+  }
+
+  setInterval(updateClock, 10);
+  updateClock();
+
   function updateStatus() {
-    console.log("1 sn");
     $.ajax({
       url: '/cameras',
       type: 'GET',
       success: function (data) {
-        debugger;
         Object.keys(data).forEach(function (cameraId) {
-          debugger;
-          var cameraStatus = data[cameraId];
+          // debugger;
+          var camera = data[cameraId];
           var indicator = $('#recordingIndicator_' + cameraId);
           var recordingButton = $('#startRecordingButton_' + cameraId);
           var stopButton = $('#stopRecordingButton_' + cameraId);
+          var startStreamingButton = $('#startStreamingButton_' + cameraId);
+          var stopStreamingButton = $('#stopStreamingButton_' + cameraId);
 
-          if (cameraStatus.streamStatus == false) {
-            console.log(cameraStatus.id + ' Stream is not available');
-            // indicator.css('background-color', 'white');
-            // indicator.text('No Stream');
+          if (camera.streamStatus == false) {
+            console.log(camera.id + ' Stream is not available');
+            indicator.css('color', 'white');
+            indicator.text('not live');
             recordingButton.prop('disabled', true);
             stopButton.prop('disabled', true);
+
+            startStreamingButton.prop('disabled', true);
+            stopStreamingButton.addClass('d-none');
           } else {
-            // indicator.css('background-color', 'red');
-            indicator.text('Live');
-            if (cameraStatus.recordingStatus) {
+            indicator.css('color', 'red');
+            indicator.text('live');
+            if (camera.recordingStatus) {
               recordingButton.prop('disabled', true);
               stopButton.prop('disabled', false);
             } else {
               recordingButton.prop('disabled', false);
               stopButton.prop('disabled', true);
+            }
+
+            if (camera.getStream == true) {
+
+              startStreamingButton.addClass('d-none');
+              stopStreamingButton.removeClass('d-none');
+
+            } else{
+              startStreamingButton.prop('disabled', false);
+              
+              startStreamingButton.removeClass('d-none');
+              stopStreamingButton.addClass('d-none');
             }
           }
 
@@ -424,7 +480,6 @@
       }
     });
   }
-
 
   toastr.options = {
     "closeButton": false,
@@ -446,14 +501,6 @@
     "z-index": 1005,
   }
 
-  $('#stopCameraButton').click(function () {
-    $.get('/stop', function (data) {
-      toastr.success("data.message");
-    }).fail(function () {
-      toastr.error("Error stopping the camera.");
-    });
-  });
-
   function deleteCamera(cameraId) {
     swal.fire({
       title: 'Are you sure?',
@@ -469,8 +516,13 @@
           url: `/delete_camera/${cameraId}`,
           type: 'DELETE',
           success: function (data) {
-            toastr.success(data.message);
-            location.reload();
+            if (data.isSuccess) {
+              toastr.success(data.message);
+              location.reload();
+            } else {
+              toastr.error(data.message);
+              swal.fire({ title: 'Error', text: data.message, icon: 'error', showConfirmButton: false, timer: 2000 });
+            }
           },
           error: function (xhr, status, error) {
             toastr.error('Error:', error);
@@ -480,17 +532,6 @@
     });
   }
 
-  function updateCameraStatus(data) {
-    var statusElement = $('#cameraStatus');
-    if (data.status) {
-      statusElement.removeClass('bg-danger').addClass('bg-success');
-      statusElement.text('Online');
-    } else {
-      statusElement.removeClass('bg-success').addClass('bg-danger');
-      statusElement.text('Offline');
-    }
-  }
-
   function addOrUpdateCamera(cameraId, ip, port, username, password, url, modalId) {
     $.ajax({
       url: '/add_camera',
@@ -498,10 +539,15 @@
       contentType: 'application/json',
       data: JSON.stringify({ id: cameraId, ip, port, username, password, url }),
       success: function (data) {
-        toastr.success(data.message);
-        $(`#${modalId}`).modal('hide');
-        swal.fire({ title: 'Success', text: data.message, icon: 'success', showConfirmButton: false, timer: 2000 });
-        location.reload();
+        if (data.isSuccess) {
+          toastr.success(data.message);
+          $(`#${modalId}`).modal('hide');
+          swal.fire({ title: 'Success', text: data.message, icon: 'success', showConfirmButton: false, timer: 2000 });
+          location.reload();
+        } else {
+          toastr.error(data.message);
+          swal.fire({ title: 'Error', text: data.message, icon: 'error', showConfirmButton: false, timer: 2000 });
+        }
       },
       error: function (xhr, status, error) {
         toastr.error('Error:', error);
@@ -529,14 +575,24 @@
 
   function startRecording(cameraId) {
     $.get(`/start_continuous_record/${cameraId}`, function (data) {
-      // toastr.success("data.message");
-      swal.fire({
-        title: 'Success',
-        text: data.message,
-        icon: 'success',
-        showConfirmButton: false,
-        timer: 3400,
-      });
+      if (data.isSuccess) {
+        swal.fire({
+          title: 'Success',
+          text: data.message,
+          icon: 'success',
+          showConfirmButton: false,
+          timer: 3400,
+        });
+      } else {
+        swal.fire({
+          title: 'Error',
+          text: data.message,
+          icon: 'error',
+          showConfirmButton: false,
+          timer: 3400,
+        });
+      }
+     
     }).fail(function () {
       toastr.error("Error starting continuous recording.");
     });
@@ -544,14 +600,23 @@
 
   function stopRecording(cameraId) {
     $.get(`/stop_continuous_record/${cameraId}`, function (data) {
-      // toastr.success("data.message");
-      swal.fire({
-        title: 'Success',
-        text: data.message,
-        icon: 'success',
-        showConfirmButton: false,
-        timer: 3400,
-      });
+      if (data.isSuccess) {
+        swal.fire({
+          title: 'Success',
+          text: data.message,
+          icon: 'success',
+          showConfirmButton: false,
+          timer: 3400,
+        });
+      } else {
+        swal.fire({
+          title: 'Error',
+          text: data.message,
+          icon: 'error',
+          showConfirmButton: false,
+          timer: 3400,
+        });
+      }
     }).fail(function () {
       toastr.error("Error stopping continuous recording.");
     });
@@ -561,17 +626,74 @@
     $.ajax({
       type: 'GET',
       url: '/get_camera_info/' + cameraId,
-      success: function (response) {
-        var cameraInfo = response.cameraInfo;
-        $('#cameraIpUpdate').val(cameraInfo.ip);
-        $('#cameraPortUpdate').val(cameraInfo.port);
-        $('#cameraUrlUpdate').val(cameraInfo.url);
-        $('#cameraUsernameUpdate').val(cameraInfo.username);
-        $('#cameraPasswordUpdate').val(cameraInfo.password);
-        $('#cameraIdUpdate').val(cameraId);
-        $('#updateCameraModal').modal('show');
+      success: function (data) {
+        if (data.isSuccess) {
+          var cameraInfo = data.cameraInfo;
+          $('#cameraIpUpdate').val(cameraInfo.ip);
+          $('#cameraPortUpdate').val(cameraInfo.port);
+          $('#cameraUrlUpdate').val(cameraInfo.url);
+          $('#cameraUsernameUpdate').val(cameraInfo.username);
+          $('#cameraPasswordUpdate').val(cameraInfo.password);
+          $('#cameraIdUpdate').val(cameraId);
+          $('#updateCameraModal').modal('show');
+        } else {
+          swal.fire({
+            title: 'Error',
+            text: data.message,
+            icon: 'error',
+            showConfirmButton: false,
+            timer: 2000,
+          });
+        }
       },
       error: function (xhr, status, error) {
+        console.error('Error:', error);
+      }
+    });
+  }
+
+  function startStreaming(cameraId) {
+    var $videoFeed = $('#video_feed_' + cameraId);
+    // debugger;
+    
+    $.ajax({
+      url: `/startStream/${cameraId}`,
+      type: 'GET',
+      success: function (data) {
+        if (data.isSuccess) {
+          $videoFeed.attr('src', `/video_feed?id=${cameraId}`);
+          console.log(data.message);
+          toastr.success(data.message);
+        } else {
+          toastr.error(data.message);
+        }
+      },
+      error: function (error) {
+        console.error('Error:', error);
+      }
+    });
+  }
+
+  function stopStreaming(cameraId) {
+    var $videoFeed = $('#video_feed_' + cameraId);
+    // debugger;
+
+    $.ajax({
+      url: `/stopStream/${cameraId}`,
+      type: 'GET',
+      success: function (data) {
+        if (data.isSuccess) {
+          // $videoFeed.attr('src', 'static_image.jpg');
+          // remove the src attribute to stop the video feed
+          $videoFeed.removeAttr('src');
+
+          console.log(data.message);
+          toastr.success(data.message);
+        } else {
+          toastr.error(data.message);
+        }
+      },
+      error: function (error) {
         console.error('Error:', error);
       }
     });
@@ -612,5 +734,10 @@
 
   #videoContainer:hover .overlay {
     display: none;
+  }
+
+  #clock {
+    font-size: 2em;
+    font-family: 'Arial', sans-serif;
   }
 </style>

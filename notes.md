@@ -30,3 +30,6 @@ ffmpeg -rtsp_transport tcp -i "rtsp://admin:inside2016@192.168.1.25:554" -f h264
 
 ffplay rtsp://username:password@127.0.0.1:8554/stream1
 
+
+
+ffmpeg -rtsp_transport tcp -i "rtsp://192.168.100.102:554" -f h264 - | cvlc -vvv stream:///dev/stdin --sout '#rtp{sdp=rtsp://@10.220.220.86:8554/stream1}' :demux=h264  --sout-rtsp-user username --sout-rtsp-pwd password
