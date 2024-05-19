@@ -415,6 +415,67 @@ def update_camera_statuses():
             camera.streamStatus = check_camera_status(camera)
             print(f"Kamera {camera.id} - Canlı Yayın Durumu: {'Açık' if camera.streamStatus else 'Kapalı'}")
 
+
+@app.route("/get_forward_camera_info/<int:camera_id>", methods=["GET"])
+def get_forward_camera_info(camera_id):
+    global cameras
+    for camera in cameras:
+        if camera.id == camera_id:
+            forward_camera = camera
+            break
+    if forward_camera:
+        return jsonify({"isSuccess": True, "forwardCameraInfo": forward_camera.__dict__})
+    else:
+        return jsonify({"isSuccess": False, "error": "Camera not found"})
+
+
+@app.route("/forward_camera", methods=["POST"])
+def forward_camera():
+    global cameras
+    data = request.json
+    camera_id = data.get("camera_id")
+    forward_ip = data.get("forward_ip")
+    forward_port = data.get("forward_port")
+    forward_username = data.get("forward_username")
+    forward_password = data.get("forward_password")
+    forward_url = data.get("forward_url")
+
+    if camera_id in cameras:
+        cameras[camera_id].forward_ip = forward_ip
+        cameras[camera_id].forward_port = forward_port
+        cameras[camera_id].forward_username = forward_username
+        cameras[camera_id].forward_password = forward_password
+        cameras[camera_id].forward_url = forward_url
+        cameras[camera_id].forward_status = True
+        cameras[camera_id].forward_process = subprocess.Popen(
+            f"ffmpeg -rtsp_transport {cameras[id].rtsp_transport} -i {cameras[camera_id].__str__()} -f h264 - | cvlc -vvv stream:///dev/stdin --sout '#rtp{{sdp=rtsp://@{forward_ip}:{forward_port}}}' :demux=h264  --sout-rtsp-user {forward_username} --sout-rtsp-pwd {forward_password}",
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            stdin=subprocess.PIPE,
+        )
+        return jsonify({"message": "Camera forwarded successfully", "isSuccess": True})
+    else:
+        return jsonify({"error": "Camera not found", "isSuccess": False})
+
+
+@app.route("/stop_forward_camera/<int:camera_id>", methods=["GET"])
+def stop_forward_camera(camera_id):
+    global cameras
+    if camera_id in cameras:
+        cameras[camera_id].forward_status = False
+        parent_pid = cameras[camera_id].forward_process.pid
+        parent = psutil.Process(parent_pid)
+        for child in parent.children(recursive=True):
+            child.kill()
+        parent.kill()
+        cameras[camera_id].forward_process.wait()
+        cameras[camera_id].forward_process = None
+        return jsonify({"message": "Camera forwarding stopped successfully", "isSuccess": True})
+    else:
+        return jsonify({"error": "Camera not found", "isSuccess": False})
+
+
 if __name__ == "__main__":
     try:
         myCam = Camera(

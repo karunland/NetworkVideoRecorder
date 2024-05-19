@@ -162,8 +162,8 @@
                 style="position: relative; min-height: 380px;border-radius: 8px;border: 1px solid black;">
                 <img data-ip="{{ camera_info.ip }}" data-port="{{ camera_info.port }}"
                   data-username="{{ camera_info.username }}" data-password="{{ camera_info.password }}"
-                  data-id="{{ camera_info.id }}"
-                  data-url="{{ camera_info.url }}" alt="" id="video_feed_{{ camera_info.id }}"
+                  data-id="{{ camera_info.id }}" data-url="{{ camera_info.url }}" alt=""
+                  id="video_feed_{{ camera_info.id }}"
                   src="{{ url_for('video_feed', id=camera_info.id)  if camera_info.getStream else 'static_image.jpg' }}"
                   alt="" style="z-index:1001;border-radius: 8px;width: 100%;height: auto;">
 
@@ -171,7 +171,7 @@
                   style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center;border-radius: 8px;">
                   <a classs="link" onclick="deleteCamera({{ camera_info.id }})"
                     style="color: white;font-size: 34px;color: white;font-weight: 900;font-style: italic;text-align: center;">
-                    <i style="color: red;" class="fa-solid fa-video"></i> 
+                    <i style="color: red;" class="fa-solid fa-video"></i>
                   </a>
                 </div>
                 <style>
@@ -204,21 +204,23 @@
 
                 <!-- Dropdown - User Information -->
 
-                <div id="recordingIndicator_{{ camera_info.id }}"
-                  style="position: absolute;top: 10px;right: 50px;font-weight: 800;padding: 10px 20px;z-index: 1001;">
+                <div id="recordingIndicator_{{ camera_info.id }}" style="position: absolute;top: 10px;right: 50px;font-weight: 800;padding: 10px 20px;z-index: 1001;">
                 </div>
+                <!-- create forward status  -->
+                <div id="forwardIndicator_{{ camera_info.id }}" style="position: absolute;top: 10px;right: 10px;font-weight: 800;padding: 10px 20px;z-index: 1001;">
 
                 <div class="controls"
                   style="position: absolute; top: 10px;  z-index: 1002;right: 10px;background: white;border-radius: 8px;">
-                  <a class="nav-link" id="cameraUpdateDrop" role="button" data-toggle="dropdown" aria-haspopup="true"
-                    aria-expanded="false">
+                  <a class="nav-link" id="cameraUpdateDrop" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     <i class="fa-solid fa-bars"></i>
                   </a>
 
-                  <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
-                    aria-labelledby="cameraUpdateDrop" style="z-index: 1003;padding: .2rem 0.5rem;">
+                  <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="cameraUpdateDrop" style="z-index: 1003;padding: .2rem 0.5rem;">
                     <a class="dropdown-item" onclick="showEditModal({{ camera_info.id }})">
                       <i class="fa-solid fa-gear"></i> Update
+                    </a>
+                    <a class="dropdown-item" onclick="forwardModal({{ camera_info.id }})">
+                      <i class="fa fa-arrow-right" aria-hidden="true"></i> Forward Camera
                     </a>
                     <a class="dropdown-item" onclick="deleteCamera({{ camera_info.id }})">
                       <i class="fa-regular fa-trash-can"></i> Delete
@@ -228,12 +230,12 @@
                 <!-- End Dropdown - User Information -->
 
                 <div id="cameraInfo"
-                  style="font-size: 15px; font-weight: 500; position: absolute; bottom: 10px; right: 10px;color: white;z-index: 1001;background: rgba(0,0,0,1);padding: 5px;border-radius: 8px;">
+                  style="font-size: 15px; font-weight: 500; position: absolute; bottom: 10px; right: 10px;color: white;z-index: 1001;padding: 5px">
                   <p>Camera IP: <b>{{ camera_info.ip }}</b></p>
-                  <p>Camera Port: <b>{{ camera_info.port }}</b></p>
+                  <!-- <p>Camera Port: <b>{{ camera_info.port }}</b></p>
                   <p>Username: <b>{{ camera_info.username }}</b></p>
                   <p>Password: <b>{{ camera_info.password }}</b></p>
-                  <p>url: <b>{{ camera_info.url }}</b></p>
+                  <p>url: <b>{{ camera_info.url }}</b></p> -->
                 </div>
               </div>
             </div>
@@ -285,6 +287,7 @@
       </div>
     </div>
   </div>
+  <!-- en of Logout Modal -->
 
   <!-- camera add modal -->
   <div class="modal fade" id="addCameraModal" tabindex="-1" role="dialog" aria-labelledby="addCameraModalLabel"
@@ -378,6 +381,54 @@
       </div>
     </div>
   </div>
+  <!-- update camera modal end -->
+
+  <!-- forward camera modal -->
+  <div class="modal fade" id="forwardCamModal" tabindex="-1" role="dialog" aria-labelledby="forwardCamModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="forwardCamModalLabel">Forward Camera</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <form id="forwardCamForm">
+          <div class="modal-body">
+            <input id="forwardCameraId" value="" name="forwardCameraId" type="hidden" />
+            <div class="mb-3">
+              <label for="forwardCameraIp" class="form-label">Camera IP Address</label>
+              <input type="text" class="form-control" id="forwardCameraIp" value="127.0.0.1"
+                placeholder=" Enter IP Address">
+            </div>
+            <div class="mb-3">
+              <label for="forwardCameraPort" class="form-label">Camera Port</label>
+              <input type="text" class="form-control" id="forwardCameraPort" value="5050" placeholder="Enter Port">
+            </div>
+            <!-- <div class="mb-3">
+              <label for="forwardCameraUrl" class="form-label">Url</label>
+              <input type="text" class="form-control" id="forwardCameraUrl" value="/stream" placeholder="Enter Url">
+            </div> -->
+            <div class="mb-3">
+              <label for="forwardCameraUsername" class="form-label">Username</label>
+              <input type="text" class="form-control" id="forwardCameraUsername" value="username" placeholder="Enter Username">
+            </div>
+            <div class="mb-3">
+              <label for="forwardCameraPassword" class="form-label">Password</label>
+              <input type="password" class="form-control" id="forwardCameraPassword" value="password"
+                placeholder="Enter Password">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <!-- forward camera modal end -->
 
 </body>
 
@@ -438,41 +489,65 @@
           var stopButton = $('#stopRecordingButton_' + cameraId);
           var startStreamingButton = $('#startStreamingButton_' + cameraId);
           var stopStreamingButton = $('#stopStreamingButton_' + cameraId);
+          var forwardIndicator = $('#forwardIndicator_' + cameraId);
 
-          if (camera.streamStatus == false) {
-            console.log(camera.id + ' Stream is not available');
-            indicator.css('color', 'white');
-            indicator.text('not live');
-            recordingButton.prop('disabled', true);
-            stopButton.prop('disabled', true);
+          // if (camera.streamStatus == false) {
+          //   console.log(camera.id + ' Stream is not available');
+          //   indicator.css('color', 'white');
+          //   indicator.text('not live');
+          //   recordingButton.prop('disabled', true);
+          //   stopButton.prop('disabled', true);
 
-            startStreamingButton.prop('disabled', true);
-            stopStreamingButton.addClass('d-none');
+          //   startStreamingButton.prop('disabled', true);
+          //   stopStreamingButton.addClass('d-none');
+          // } else {
+          //   indicator.css('color', 'red');
+          //   indicator.text('live');
+          //   if (camera.recordingStatus) {
+          //     recordingButton.prop('disabled', true);
+          //     stopButton.prop('disabled', false);
+          //   } else {
+          //     recordingButton.prop('disabled', false);
+          //     stopButton.prop('disabled', true);
+          //   }
+
+          //   if (camera.getStream == true) {
+
+          //     startStreamingButton.addClass('d-none');
+          //     stopStreamingButton.removeClass('d-none');
+
+          //   } else {
+          //     startStreamingButton.prop('disabled', false);
+
+          //     startStreamingButton.removeClass('d-none');
+          //     stopStreamingButton.addClass('d-none');
+          //   }
+          // }
+
+          if (camera.recordingStatus) {
+            indicator.css('color', 'green');
+            indicator.text('recording');
           } else {
             indicator.css('color', 'red');
-            indicator.text('live');
-            if (camera.recordingStatus) {
-              recordingButton.prop('disabled', true);
-              stopButton.prop('disabled', false);
-            } else {
-              recordingButton.prop('disabled', false);
-              stopButton.prop('disabled', true);
-            }
-
-            if (camera.getStream == true) {
-
-              startStreamingButton.addClass('d-none');
-              stopStreamingButton.removeClass('d-none');
-
-            } else{
-              startStreamingButton.prop('disabled', false);
-              
-              startStreamingButton.removeClass('d-none');
-              stopStreamingButton.addClass('d-none');
-            }
+            indicator.text('not recording');
           }
 
-          
+          if (camera.getStream == true) {
+            startStreamingButton.addClass('d-none');
+            stopStreamingButton.removeClass('d-none');
+          } else {
+            startStreamingButton.removeClass('d-none');
+            stopStreamingButton.addClass('d-none');
+          }
+
+          if (camera.forwardStatus) {
+            forwardIndicator.css('color', 'green');
+            forwardIndicator.text('forwarded');
+          } else {
+            forwardIndicator.css('color', 'red');
+            forwardIndicator.text('not forwarded');
+          }
+
         });
       },
       error: function (xhr, status, error) {
@@ -592,7 +667,7 @@
           timer: 3400,
         });
       }
-     
+
     }).fail(function () {
       toastr.error("Error starting continuous recording.");
     });
@@ -652,10 +727,72 @@
     });
   }
 
+  function forwardModal(cameraId) {
+    $.ajax({
+      type: 'GET',
+      url: '/forward/' + cameraId,
+      success: function (data) {
+        if (data.isSuccess) {
+          var cameraInfo = data.cameraInfo;
+          $('#forwardCameraId').val(cameraId);
+          $('#forwardCameraIp').val(cameraInfo.ip);
+          $('#forwardCameraPort').val(cameraInfo.port);
+          $('#forwardCameraUrl').val("cameraInfo.url");
+          $('#forwardCameraUsername').val(cameraInfo.username);
+          $('#forwardCameraPassword').val(cameraInfo.password);
+          $('#forwardCamModal').modal('show');
+        } else {
+          swal.fire({
+            title: 'Error',
+            text: data.message,
+            icon: 'error',
+            showConfirmButton: false,
+            timer: 2000,
+          });
+        }
+      },
+      error: function (xhr, status, error) {
+        console.error('Error:', error);
+      }
+    });
+  }
+
+  // create post request to forward camera
+  $('#forwardCamForm').submit(function (e) {
+    e.preventDefault();
+    $.ajax({
+      url: '/forward',
+      type: 'POST',
+      contentType: 'application/json',
+      data: JSON.stringify({
+        id: $('#forwardCameraId').val(),
+        ip: $('#forwardCameraIp').val(),
+        port: $('#forwardCameraPort').val(),
+        username: $('#forwardCameraUsername').val(),
+        password: $('#forwardCameraPassword').val(),
+        url: $('#forwardCameraUrl').val()
+      }),
+      success: function (data) {
+        if (data.isSuccess) {
+          toastr.success(data.message);
+          $('#forwardCamModal').modal('hide');
+          swal.fire({ title: 'Success', text: data.message, icon: 'success', showConfirmButton: false, timer: 2000 });
+          location.reload();
+        } else {
+          toastr.error(data.message);
+          swal.fire({ title: 'Error', text: data.message, icon: 'error', showConfirmButton: false, timer: 2000 });
+        }
+      },
+      error: function (xhr, status, error) {
+        toastr.error('Error:', error);
+      }
+    });
+  });
+
   function startStreaming(cameraId) {
     var $videoFeed = $('#video_feed_' + cameraId);
     // debugger;
-    
+
     $.ajax({
       url: `/startStream/${cameraId}`,
       type: 'GET',

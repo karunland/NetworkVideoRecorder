@@ -19,6 +19,14 @@ class Camera:
         # arayuze gelen kamera kalitesi
         self.quality = quality
         self.rtsp_transport = rtsp_transport
+        # forward ip, port, username, password, url
+        self.forward_ip = ""
+        self.forward_port = ""
+        self.forward_username = ""
+        self.forward_password = ""
+        self.forward_url = ""
+        self.forward_process = None
+        self.forward_status = False
     
     def __str__(self):
         return f"rtsp://{self.username + ':' + self.password + '@' if self.username and self.password else ''}{self.ip}{':' + self.port if self.port else ''}{self.url if self.url else ''}"
