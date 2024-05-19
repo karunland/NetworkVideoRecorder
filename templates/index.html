@@ -207,8 +207,8 @@
                 <div id="recordingIndicator_{{ camera_info.id }}" style="position: absolute;top: 10px;right: 50px;font-weight: 800;padding: 10px 20px;z-index: 1001;">
                 </div>
                 <!-- create forward status  -->
-                <div id="forwardIndicator_{{ camera_info.id }}" style="position: absolute;top: 10px;right: 10px;font-weight: 800;padding: 10px 20px;z-index: 1001;">
-
+                <div id="forwardIndicator_{{ camera_info.id }}" style="position: absolute; top: 30px; right: 40px; font-weight: 800; padding: 10px 20px; z-index: 1001; color: red;">
+                </div>
                 <div class="controls"
                   style="position: absolute; top: 10px;  z-index: 1002;right: 10px;background: white;border-radius: 8px;">
                   <a class="nav-link" id="cameraUpdateDrop" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -219,9 +219,12 @@
                     <a class="dropdown-item" onclick="showEditModal({{ camera_info.id }})">
                       <i class="fa-solid fa-gear"></i> Update
                     </a>
-                    <a class="dropdown-item" onclick="forwardModal({{ camera_info.id }})">
-                      <i class="fa fa-arrow-right" aria-hidden="true"></i> Forward Camera
-                    </a>
+                    <button class="dropdown-item" id="startForwardButton_{{ camera_info.id }}" onclick="forwardModal({{ camera_info.id }})">
+                      <i class="fa fa-arrow-right" aria-hidden="true"></i> Start Forwarding
+                    </b>
+                    <button class="dropdown-item" id="stopForwardButton_{{ camera_info.id }}" onclick="stopForward({{ camera_info.id }})">
+                      <i class="fa fa-stop" aria-hidden="true"></i> Stop Forwarding
+                    </button>
                     <a class="dropdown-item" onclick="deleteCamera({{ camera_info.id }})">
                       <i class="fa-regular fa-trash-can"></i> Delete
                     </a>
@@ -491,61 +494,51 @@
           var stopStreamingButton = $('#stopStreamingButton_' + cameraId);
           var forwardIndicator = $('#forwardIndicator_' + cameraId);
 
-          // if (camera.streamStatus == false) {
-          //   console.log(camera.id + ' Stream is not available');
-          //   indicator.css('color', 'white');
-          //   indicator.text('not live');
-          //   recordingButton.prop('disabled', true);
-          //   stopButton.prop('disabled', true);
+          if (camera.streamStatus == false) {
+            console.log(camera.id + ' Stream is not available');
+            indicator.css('color', 'white');
+            indicator.text('not live');
+            recordingButton.prop('disabled', true);
+            stopButton.prop('disabled', true);
 
-          //   startStreamingButton.prop('disabled', true);
-          //   stopStreamingButton.addClass('d-none');
-          // } else {
-          //   indicator.css('color', 'red');
-          //   indicator.text('live');
-          //   if (camera.recordingStatus) {
-          //     recordingButton.prop('disabled', true);
-          //     stopButton.prop('disabled', false);
-          //   } else {
-          //     recordingButton.prop('disabled', false);
-          //     stopButton.prop('disabled', true);
-          //   }
-
-          //   if (camera.getStream == true) {
-
-          //     startStreamingButton.addClass('d-none');
-          //     stopStreamingButton.removeClass('d-none');
-
-          //   } else {
-          //     startStreamingButton.prop('disabled', false);
-
-          //     startStreamingButton.removeClass('d-none');
-          //     stopStreamingButton.addClass('d-none');
-          //   }
-          // }
-
-          if (camera.recordingStatus) {
-            indicator.css('color', 'green');
-            indicator.text('recording');
+            startStreamingButton.prop('disabled', true);
+            stopStreamingButton.addClass('d-none');
           } else {
             indicator.css('color', 'red');
-            indicator.text('not recording');
+            indicator.text('live');
+            if (camera.recordingStatus) {
+              recordingButton.prop('disabled', true);
+              stopButton.prop('disabled', false);
+            } else {
+              recordingButton.prop('disabled', false);
+              stopButton.prop('disabled', true);
+            }
+
+            if (camera.getStream == true) {
+
+              startStreamingButton.addClass('d-none');
+              stopStreamingButton.removeClass('d-none');
+
+            } else {
+              startStreamingButton.prop('disabled', false);
+
+              startStreamingButton.removeClass('d-none');
+              stopStreamingButton.addClass('d-none');
+            }
           }
 
-          if (camera.getStream == true) {
-            startStreamingButton.addClass('d-none');
-            stopStreamingButton.removeClass('d-none');
-          } else {
-            startStreamingButton.removeClass('d-none');
-            stopStreamingButton.addClass('d-none');
-          }
-
-          if (camera.forwardStatus) {
+          if (camera.forward_status) {
             forwardIndicator.css('color', 'green');
             forwardIndicator.text('forwarded');
+
+            $('#startForwardButton_' + cameraId).prop('disabled', true);
+            $('#stopForwardButton_' + cameraId).prop('disabled', false);
           } else {
             forwardIndicator.css('color', 'red');
             forwardIndicator.text('not forwarded');
+
+            $('#startForwardButton_' + cameraId).prop('disabled', false);
+            $('#stopForwardButton_' + cameraId).prop('disabled', true);
           }
 
         });
@@ -730,16 +723,16 @@
   function forwardModal(cameraId) {
     $.ajax({
       type: 'GET',
-      url: '/forward/' + cameraId,
+      url: '/get_forward_camera_info/' + cameraId,
       success: function (data) {
         if (data.isSuccess) {
           var cameraInfo = data.cameraInfo;
           $('#forwardCameraId').val(cameraId);
-          $('#forwardCameraIp').val(cameraInfo.ip);
-          $('#forwardCameraPort').val(cameraInfo.port);
-          $('#forwardCameraUrl').val("cameraInfo.url");
-          $('#forwardCameraUsername').val(cameraInfo.username);
-          $('#forwardCameraPassword').val(cameraInfo.password);
+          $('#forwardCameraIp').val(cameraInfo.forward_ip);
+          $('#forwardCameraPort').val(cameraInfo.forward_port);
+          // $('#forwardCameraUrl').val("cameraInfo.forward_url");
+          $('#forwardCameraUsername').val(cameraInfo.forward_username);
+          $('#forwardCameraPassword').val(cameraInfo.forward_password);
           $('#forwardCamModal').modal('show');
         } else {
           swal.fire({
@@ -757,30 +750,28 @@
     });
   }
 
-  // create post request to forward camera
   $('#forwardCamForm').submit(function (e) {
     e.preventDefault();
     $.ajax({
-      url: '/forward',
+      url: '/forward_camera',
       type: 'POST',
       contentType: 'application/json',
       data: JSON.stringify({
-        id: $('#forwardCameraId').val(),
-        ip: $('#forwardCameraIp').val(),
-        port: $('#forwardCameraPort').val(),
-        username: $('#forwardCameraUsername').val(),
-        password: $('#forwardCameraPassword').val(),
-        url: $('#forwardCameraUrl').val()
+        camera_id: $('#forwardCameraId').val(),
+        forward_ip: $('#forwardCameraIp').val(),
+        forward_port: $('#forwardCameraPort').val(),
+        forward_username: $('#forwardCameraUsername').val(),
+        forward_password: $('#forwardCameraPassword').val(),
       }),
       success: function (data) {
         if (data.isSuccess) {
           toastr.success(data.message);
-          $('#forwardCamModal').modal('hide');
           swal.fire({ title: 'Success', text: data.message, icon: 'success', showConfirmButton: false, timer: 2000 });
-          location.reload();
+          $('#forwardCamModal').modal('hide');
+          // location.reload();
         } else {
           toastr.error(data.message);
-          swal.fire({ title: 'Error', text: data.message, icon: 'error', showConfirmButton: false, timer: 2000 });
+          swal.fire({ title: 'message', text: data.message, icon: 'error', showConfirmButton: false, timer: 2000 });
         }
       },
       error: function (xhr, status, error) {
@@ -788,6 +779,27 @@
       }
     });
   });
+
+  function stopForward(cameraId) {
+    $.ajax({
+      url: '/stop_forward_camera/' + cameraId,
+      type: 'GET',
+      success: function (data) {
+        if (data.isSuccess) {
+          toastr.success(data.message);
+          swal.fire({ title: 'Success', text: data.message, icon: 'success', showConfirmButton: false, timer: 2000 });
+          // location.reload();
+        } else {
+          toastr.error(data.error);
+          swal.fire({ title: 'message', text: data.error, icon: 'error', showConfirmButton: false, timer: 2000 });
+        }
+      },
+      error: function (xhr, status, error) {
+        toastr.error('Error:', error);
+      }
+    });
+  }
+
 
   function startStreaming(cameraId) {
     var $videoFeed = $('#video_feed_' + cameraId);
@@ -820,8 +832,6 @@
       type: 'GET',
       success: function (data) {
         if (data.isSuccess) {
-          // $videoFeed.attr('src', 'static_image.jpg');
-          // remove the src attribute to stop the video feed
           $videoFeed.removeAttr('src');
 
           console.log(data.message);

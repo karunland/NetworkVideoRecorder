@@ -331,7 +331,9 @@ def get_camera_info(cameraId: int):
             camera_info = camera
             break
     if camera_info:
-        return jsonify({"isSuccess": True, "cameraInfo": camera_info.__dict__})
+        res = camera_info.__dict__
+        print(res)
+        return jsonify({"isSuccess": True, "cameraInfo": res})
     else:
         return jsonify({"isSuccess": False, "error": "Camera not found"})
 
@@ -366,9 +368,7 @@ def stop_stream(camera_id):
     if mcamera is None:
         return jsonify({"message": f"Camera {camera_id} not found", "isSuccess": False})
     cameras[camera_id].getStream = False
-    return jsonify(
-        {"message": f"Stream stopped for camera {camera_id}", "isSuccess": True}
-    )
+    return jsonify({"message": f"Stream stopped for camera {camera_id}", "isSuccess": True})
 
 
 @app.route("/startStream/<int:camera_id>", methods=["GET"])
@@ -393,6 +393,8 @@ def get_cameras():
         camera_dict = camera.__dict__.copy()
         if 'camera_process' in camera_dict:
             del camera_dict['camera_process']
+        if 'forward_process' in camera_dict:
+            del camera_dict['forward_process']
         camera_data.append(camera_dict)
 
     return jsonify(camera_data)
@@ -419,12 +421,15 @@ def update_camera_statuses():
 @app.route("/get_forward_camera_info/<int:camera_id>", methods=["GET"])
 def get_forward_camera_info(camera_id):
     global cameras
+    camera_dict = {}
     for camera in cameras:
         if camera.id == camera_id:
-            forward_camera = camera
+            camera_dict = camera.__dict__.copy()
+            if 'camera_process' in camera_dict:
+                del camera_dict['camera_process']
             break
     if forward_camera:
-        return jsonify({"isSuccess": True, "forwardCameraInfo": forward_camera.__dict__})
+        return jsonify({"isSuccess": True, "cameraInfo": camera_dict})
     else:
         return jsonify({"isSuccess": False, "error": "Camera not found"})
 
@@ -438,42 +443,57 @@ def forward_camera():
     forward_port = data.get("forward_port")
     forward_username = data.get("forward_username")
     forward_password = data.get("forward_password")
-    forward_url = data.get("forward_url")
 
-    if camera_id in cameras:
-        cameras[camera_id].forward_ip = forward_ip
-        cameras[camera_id].forward_port = forward_port
-        cameras[camera_id].forward_username = forward_username
-        cameras[camera_id].forward_password = forward_password
-        cameras[camera_id].forward_url = forward_url
-        cameras[camera_id].forward_status = True
-        cameras[camera_id].forward_process = subprocess.Popen(
-            f"ffmpeg -rtsp_transport {cameras[id].rtsp_transport} -i {cameras[camera_id].__str__()} -f h264 - | cvlc -vvv stream:///dev/stdin --sout '#rtp{{sdp=rtsp://@{forward_ip}:{forward_port}}}' :demux=h264  --sout-rtsp-user {forward_username} --sout-rtsp-pwd {forward_password}",
+   
+
+    if cameras[int(camera_id)] is not None:
+        if cameras[int(camera_id)].forward_status is True:
+            print("Camera is already forwarded")
+            return jsonify({"message": "Camera is already forwarded", "isSuccess": False})
+        cameras[int(camera_id)].forward_ip = forward_ip
+        cameras[int(camera_id)].forward_port = forward_port
+        cameras[int(camera_id)].forward_username = forward_username
+        cameras[int(camera_id)].forward_password = forward_password
+        # cameras[int(camera_id))].forward_url = forward_url
+        cameras[int(camera_id)].forward_status = True
+        ss = f"ffmpeg -rtsp_transport {cameras[int(camera_id)].rtsp_transport} -i {cameras[int(camera_id)].__str__()} -f h264 - | cvlc -vvv stream:///dev/stdin --sout '#rtp{{sdp=rtsp://{forward_ip}:{forward_port}}}' :demux=h264  --sout-rtsp-user {forward_username} --sout-rtsp-pwd {forward_password}"
+        print(ss)
+        cameras[int(camera_id)].forward_process = subprocess.Popen(
+            ss,
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             stdin=subprocess.PIPE,
         )
+       
+        print("Camera forwarded successfully")
         return jsonify({"message": "Camera forwarded successfully", "isSuccess": True})
     else:
-        return jsonify({"error": "Camera not found", "isSuccess": False})
+        print("Camera not found")
+        return jsonify({"message": "Camera not found", "isSuccess": False})
 
 
 @app.route("/stop_forward_camera/<int:camera_id>", methods=["GET"])
 def stop_forward_camera(camera_id):
     global cameras
-    if camera_id in cameras:
-        cameras[camera_id].forward_status = False
-        parent_pid = cameras[camera_id].forward_process.pid
+    
+    if cameras[int(camera_id)] is not None:
+        if cameras[int(camera_id)].forward_status is False:
+            print("Camera is not forwarded")
+            return jsonify({"message": "Camera is not forwarded", "isSuccess": False})
+        cameras[int(camera_id)].forward_status = False
+        parent_pid = cameras[int(camera_id)].forward_process.pid
         parent = psutil.Process(parent_pid)
         for child in parent.children(recursive=True):
             child.kill()
         parent.kill()
-        cameras[camera_id].forward_process.wait()
-        cameras[camera_id].forward_process = None
+        cameras[int(camera_id)].forward_process.wait()
+        cameras[int(camera_id)].forward_process = None
+       
+        print("Camera forwarding stopped successfully")
         return jsonify({"message": "Camera forwarding stopped successfully", "isSuccess": True})
     else:
-        return jsonify({"error": "Camera not found", "isSuccess": False})
+        return jsonify({"message": "Camera not found", "isSuccess": False})
 
 
 if __name__ == "__main__":
@@ -498,8 +518,8 @@ if __name__ == "__main__":
         time.sleep(1)
         
         cameras.append(myCam)
-        cameras.append(Camera(ip='192.168.100.102', port='', username=f"", password=f"", url='', id=1, quality=50, getStream=True))
-        cameras.append(Camera(ip='192.168.100.103', port='', username=f"", password=f"", url='', id=2, quality=50, getStream=False))
+        cameras.append(Camera(ip='192.168.100.102', port='', username=f"", password=f"", url='', id=1, quality=100, getStream=True))
+        cameras.append(Camera(ip='192.168.100.103', port='', username=f"", password=f"", url='', id=2, quality=100, getStream=False))
         # cameras.append(Camera(ip='10.42.0.141', port='8554', username=f"{username}", password=f"{password}", url='/stream', id=1))
 
         app.run("0.0.0.0", "5000", False)

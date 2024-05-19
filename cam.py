@@ -20,10 +20,10 @@ class Camera:
         self.quality = quality
         self.rtsp_transport = rtsp_transport
         # forward ip, port, username, password, url
-        self.forward_ip = ""
-        self.forward_port = ""
-        self.forward_username = ""
-        self.forward_password = ""
+        self.forward_ip = "127.0.0.1"
+        self.forward_port = "6650"
+        self.forward_username = "username"
+        self.forward_password = "password"
         self.forward_url = ""
         self.forward_process = None
         self.forward_status = False
