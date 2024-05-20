@@ -1,0 +1,14 @@
+[Unit]
+Description=Flask Service
+After=network.target
+
+[Service]
+User=karun
+WorkingDirectory=/home/karun/server/
+ExecStart=/home/karun/server/myenv/bin/python /home/karun/server/app.py
+RestartSec=2
+Restart=always
+#StandardOutput=append:/home/karun/project/flask_output.log
+
+[Install]
+WantedBy=multi-user.target

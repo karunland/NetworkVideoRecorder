@@ -1,0 +1,12 @@
+[Unit]
+Description=SSH Reverse Tunnel Service
+After=network.target
+
+[Service]
+User=karun
+ExecStart=/usr/bin/ssh -N -R 5000:localhost:5000 karun@nvr.karunlander.net
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

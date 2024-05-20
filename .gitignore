@@ -2,3 +2,4 @@ __pycache__/
 myenv/
 *.avi
 *.mp4
+*.log
