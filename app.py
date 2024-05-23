@@ -1,3 +1,5 @@
+# harun korkmaz 2023-2024 bitirme calismasi teslime edilen kodlar
+ 
 import threading
 import time
 from flask import (
@@ -506,7 +508,8 @@ if __name__ == "__main__":
                 url="/stream",
                 id=0,
                 getStream=False,
-                rtsp_transport='udp' # rpi3 kamera icin rtsp transport ayari
+                rtsp_transport='udp', # rpi3 kamera icin rtsp transport ayari
+                quality=50,
             )
         
         update_thread = Thread(target=update_camera_statuses)
@@ -518,8 +521,8 @@ if __name__ == "__main__":
         time.sleep(1)
         
         cameras.append(myCam)
-        cameras.append(Camera(ip='192.168.100.102', port='', username=f"", password=f"", url='', id=1, quality=100, getStream=True))
-        cameras.append(Camera(ip='192.168.100.103', port='', username=f"", password=f"", url='', id=2, quality=100, getStream=False))
+        cameras.append(Camera(ip='192.168.100.100', port='', username=f"", password=f"", url='', id=1, quality=100))
+        cameras.append(Camera(ip='192.168.100.101', port='', username=f"", password=f"", url='', id=2, quality=100))
         # cameras.append(Camera(ip='10.42.0.141', port='8554', username=f"{username}", password=f"{password}", url='/stream', id=1))
 
         app.run("0.0.0.0", "5000", False)
