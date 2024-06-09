@@ -1,3 +1,1 @@
 
-
-motion jpeg kullanma
